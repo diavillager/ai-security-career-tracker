@@ -15,6 +15,7 @@ from ai_security_career_tracker.role_discovery import (
     EvidenceType,
     EvidenceSource,
     ExistingRole,
+    PREFERRED_JOB_SOURCES,
     RoleObservation,
     RoleStatus,
     RESPONSIBILITY_TERMS,
@@ -77,6 +78,24 @@ class RoleDiscoveryTests(unittest.TestCase):
         self.assertEqual({query.category for query in plan}, set(Category))
         self.assertTrue(all(query.job_market == SOUTH_KOREA_JOB_MARKET for query in plan))
         self.assertTrue(all("채용" in query.query and "한국" in query.query for query in plan))
+
+    def test_search_plan_prioritizes_official_and_domestic_sources_without_allowlisting(self) -> None:
+        plan = build_search_plan(default_period(date(2026, 9, 15)))
+
+        self.assertEqual(
+            PREFERRED_JOB_SOURCES,
+            (
+                "Employer career pages",
+                "Saramin",
+                "JobKorea",
+                "Wanted",
+                "Jumpit",
+            ),
+        )
+        self.assertTrue(
+            all(query.preferred_sources == PREFERRED_JOB_SOURCES for query in plan)
+        )
+        self.assertTrue(all("site:" not in query.query for query in plan))
 
     def test_search_vocabulary_includes_every_prd_seed_and_term(self) -> None:
         expected_seeds = {

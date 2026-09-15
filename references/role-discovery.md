@@ -9,6 +9,7 @@ Use Role Discovery when the user asks to find, discover, or review emerging role
 - If a date phrase can produce materially different ranges, ask before searching.
 - Search AI, Security, and AI × Security independently.
 - Limit the job market to South Korea. Search in Korean and English, and verify the actual work location from the source page.
+- Search sources in this order: employer career pages first; then South Korean hiring platforms such as Saramin, JobKorea, Wanted, and Jumpit; then other job sites when needed. This list guides priority and is not a complete allowlist.
 
 Seed names start the search but do not limit it:
 
@@ -20,7 +21,9 @@ Expand searches with responsibility terms such as agent, tool use, RAG, evaluati
 
 ## Evidence and classification
 
-Use company career pages, official documentation, company or engineering blogs, press releases, research reports, public papers, conference material, government sources, reputable editorial media, and official GitHub project material. Exclude Reddit, Hacker News, social networks, general forums, anonymous posts, and unclear community sources.
+For recruitment evidence, prioritize employer career pages and South Korean hiring platforms such as Saramin, JobKorea, Wanted, and Jumpit. Do not use this preferred-source list as a closed allowlist. Other domestic or international job sites may be used when the posting itself explicitly verifies a South Korea work location; whenever feasible, verify the listing against the employer's original careers posting. Do not make a global job aggregator the initial search target or rely on it alone when an original employer posting can be checked.
+
+For non-recruitment context, use official documentation, company or engineering blogs, press releases, research reports, public papers, conference material, government sources, reputable editorial media, and official GitHub project material. Exclude Reddit, Hacker News, social networks, general forums, anonymous posts, and unclear community sources.
 
 Role Discovery is a South Korea employment-market workflow. Every candidate must have at least one job posting whose work location explicitly belongs to South Korea. Remote roles qualify only when the posting explicitly allows employment from South Korea. The employer's headquarters, nationality, page language, or worldwide availability does not prove a South Korea work location. Exclude every overseas or location-unclear job posting. Non-recruitment sources may come from any country and may support responsibility or technology context, but they cannot establish that a role exists in the South Korea job market.
 

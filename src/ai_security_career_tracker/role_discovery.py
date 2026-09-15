@@ -31,6 +31,13 @@ class EvidenceType(StrEnum):
 
 
 SOUTH_KOREA_JOB_MARKET = "South Korea"
+PREFERRED_JOB_SOURCES = (
+    "Employer career pages",
+    "Saramin",
+    "JobKorea",
+    "Wanted",
+    "Jumpit",
+)
 SOUTH_KOREA_SEARCH_TERMS = (
     '"South Korea"',
     '"Republic of Korea"',
@@ -58,6 +65,7 @@ class SearchQuery:
     query: str
     period: DateRange
     job_market: str = SOUTH_KOREA_JOB_MARKET
+    preferred_sources: tuple[str, ...] = PREFERRED_JOB_SOURCES
 
 
 @dataclass(frozen=True)
@@ -229,7 +237,7 @@ def default_period(as_of: date, days: int = 7) -> DateRange:
 
 
 def build_search_plan(period: DateRange) -> tuple[SearchQuery, ...]:
-    """Build one South Korea job-market query for each independent domain."""
+    """Build domain queries with preferred sources, without creating an allowlist."""
     queries: list[SearchQuery] = []
     locations = " OR ".join(SOUTH_KOREA_SEARCH_TERMS)
     for category in Category:
