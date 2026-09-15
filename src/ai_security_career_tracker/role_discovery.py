@@ -25,6 +25,13 @@ class RoleStatus(StrEnum):
     REJECTED = "Rejected"
 
 
+class ExperienceLevel(StrEnum):
+    ENTRY = "신입"
+    EXPERIENCED = "경력"
+    BOTH = "신입·경력"
+    UNKNOWN = "미확인"
+
+
 class EvidenceType(StrEnum):
     JOB_POSTING = "Job Posting"
     INFORMATIONAL = "Informational"
@@ -116,6 +123,7 @@ class RoleObservation:
     team_description: str
     product_context: str
     discovery_reason: str
+    experience_level: ExperienceLevel
     evidence_sources: tuple[EvidenceSource, ...]
 
     def __post_init__(self) -> None:
@@ -143,6 +151,7 @@ class RoleObservation:
 class CandidateRole:
     role_name: str
     category: Category
+    experience_level: ExperienceLevel
     description: str
     key_responsibilities: tuple[str, ...]
     discovery_reasons: tuple[str, ...]
@@ -279,6 +288,21 @@ def _unique_text(values: list[str]) -> tuple[str, ...]:
     return tuple(result)
 
 
+def _merge_experience_levels(
+    levels: set[ExperienceLevel],
+) -> ExperienceLevel:
+    """Combine explicit levels while treating unknown as missing evidence."""
+    stated = levels - {ExperienceLevel.UNKNOWN}
+    if not stated:
+        return ExperienceLevel.UNKNOWN
+    if ExperienceLevel.BOTH in stated or stated == {
+        ExperienceLevel.ENTRY,
+        ExperienceLevel.EXPERIENCED,
+    }:
+        return ExperienceLevel.BOTH
+    return next(iter(stated))
+
+
 def select_new_candidates(
     observations: tuple[RoleObservation, ...],
     existing_roles: tuple[ExistingRole, ...],
@@ -352,6 +376,9 @@ def select_new_candidates(
             CandidateRole(
                 role_name=group[0].role_name.strip(),
                 category=next(iter(categories)),
+                experience_level=_merge_experience_levels(
+                    {item.experience_level for item in group}
+                ),
                 description=group[0].description.strip(),
                 key_responsibilities=_unique_text(
                     [value for item in group for value in item.key_responsibilities]

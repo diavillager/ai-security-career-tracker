@@ -11,6 +11,7 @@ Create Roles DB first with these properties:
 | Role Name | Title | Canonical role name |
 | Category | Select | AI, Security, AI × Security |
 | Status | Select | Candidate, Approved, Rejected |
+| Experience Level | Select | 신입, 경력, 신입·경력, 미확인 |
 | Description | Rich text | Short role definition |
 | Key Responsibilities | Rich text | Evidence-based responsibilities |
 | First Discovered | Date | First verified discovery date |
