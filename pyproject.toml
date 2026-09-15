@@ -9,4 +9,7 @@ description = "Codex Skill for discovering AI security roles and tracking approv
 requires-python = ">=3.12"
 
 [tool.setuptools]
-py-modules = []
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
