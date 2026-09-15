@@ -15,6 +15,7 @@ from ai_security_career_tracker.role_discovery import (
     EvidenceType,
     EvidenceSource,
     ExistingRole,
+    ExperienceLevel,
     PREFERRED_JOB_SOURCES,
     RoleObservation,
     RoleStatus,
@@ -33,6 +34,7 @@ def observation(
     category: Category = Category.AI_SECURITY,
     source_url: str = "https://careers.example/roles/agent-security",
     include_supporting_source: bool = True,
+    experience_level: ExperienceLevel = ExperienceLevel.EXPERIENCED,
 ) -> RoleObservation:
     sources = [
         EvidenceSource(
@@ -61,6 +63,7 @@ def observation(
         team_description="Agent Security team",
         product_context="Agent execution platform",
         discovery_reason="Responsibilities combine agent infrastructure and product security.",
+        experience_level=experience_level,
         evidence_sources=tuple(sources),
     )
 
@@ -194,6 +197,31 @@ class RoleDiscoveryTests(unittest.TestCase):
         self.assertEqual(candidate.last_reviewed, date(2026, 9, 15))
         self.assertEqual(candidate.job_market, SOUTH_KOREA_JOB_MARKET)
         self.assertEqual(candidate.job_locations, ("Seoul",))
+        self.assertEqual(candidate.experience_level, ExperienceLevel.EXPERIENCED)
+
+    def test_entry_and_experienced_observations_merge_as_both(self) -> None:
+        outcome = select_new_candidates(
+            (
+                observation(
+                    source_url="https://careers.example/entry",
+                    include_supporting_source=False,
+                    experience_level=ExperienceLevel.ENTRY,
+                ),
+                observation(
+                    source_url="https://careers.example/experienced",
+                    include_supporting_source=False,
+                    experience_level=ExperienceLevel.EXPERIENCED,
+                ),
+            ),
+            (),
+            date(2026, 9, 15),
+            default_period(date(2026, 9, 15)),
+        )
+
+        self.assertEqual(
+            outcome.new_candidates[0].experience_level,
+            ExperienceLevel.BOTH,
+        )
 
     def test_same_run_observations_merge_distinct_evidence(self) -> None:
         outcome = select_new_candidates(
@@ -240,6 +268,7 @@ class RoleDiscoveryTests(unittest.TestCase):
             team_description=item.team_description,
             product_context=item.product_context,
             discovery_reason=item.discovery_reason,
+            experience_level=item.experience_level,
             evidence_sources=(item.evidence_sources[0], old_source),
         )
 
@@ -299,6 +328,7 @@ class RoleDiscoveryTests(unittest.TestCase):
             team_description=item.team_description,
             product_context=item.product_context,
             discovery_reason=item.discovery_reason,
+            experience_level=item.experience_level,
             evidence_sources=(
                 EvidenceSource(
                     "Global Report",

@@ -32,6 +32,7 @@ Require a verified original Published Date within the requested search period. A
 For each possible role, extract:
 
 - exact Job title;
+- explicitly stated experience level: `신입`, `경력`, `신입·경력`, or `미확인`;
 - Job description;
 - Responsibilities;
 - Required skills;
@@ -60,6 +61,7 @@ At least one of the two sources must be a South Korea Job Posting. Additional no
 - Role Name: exact observed role name
 - Category: recommended AI, Security, or AI × Security
 - Status: Candidate
+- Experience Level: explicit posting value normalized to `신입`, `경력`, `신입·경력`, or `미확인`
 - Description: responsibility-based summary
 - Key Responsibilities: newline-separated responsibilities
 - First Discovered: execution date
@@ -71,4 +73,4 @@ Never alter the pre-run Approved-role snapshot, call Trend Update, or use a new 
 
 ## Report
 
-Report the explicit date range, `Job market: South Korea`, all three searched domains, source counts, overseas or location-unclear job-posting exclusion counts, other excluded counts, numbered new Candidates, and existing-role matches. Each candidate needs its verified South Korea work location, recommended Category, Description, Key Responsibilities, discovery reason, and Evidence Sources. End with a clear request for candidate approval or rejection; do not change statuses until the user responds.
+Report the explicit date range, `Job market: South Korea`, all three searched domains, source counts, overseas or location-unclear job-posting exclusion counts, other excluded counts, numbered new Candidates, and existing-role matches. Each candidate needs its verified South Korea work location, Experience Level, recommended Category, Description, Key Responsibilities, discovery reason, and Evidence Sources. End with a clear request for candidate approval or rejection; do not change statuses until the user responds.

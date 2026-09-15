@@ -17,12 +17,13 @@ Role Discovery finds new role names and stores only new roles as Candidate. Tren
 - Allow overseas sources for non-recruitment information such as technology, industry, research, product, and security trends.
 - Exclude community sources such as Reddit, Hacker News, social networks, general forums, and anonymous posts from the MVP.
 - Exclude content whose original Published Date cannot be verified.
+- Record recruitment experience level as `신입`, `경력`, `신입·경력`, or `미확인` from explicit posting evidence rather than inferring it from the title.
 
 ## Notion structure
 
 Create one Roles database and one Trends database under the confirmed project page. Save their identifiers after the first creation and reuse them. Never create duplicate databases merely because saved identifiers are unavailable.
 
-Roles must support Role Name, Category, Status, Description, Key Responsibilities, First Discovered, Last Reviewed, Evidence Sources, and Notes.
+Roles must support Role Name, Category, Status, Experience Level, Description, Key Responsibilities, First Discovered, Last Reviewed, Evidence Sources, and Notes.
 
 Trends must support Title, Summary, Key Insight, Source Type, Source Name, Original URL, Published Date, Collected Date, Related Roles, and Domain.
 
