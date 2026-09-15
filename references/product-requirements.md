@@ -11,6 +11,8 @@ Role Discovery finds new role names and stores only new roles as Candidate. Tren
 - Search AI, Security, and AI × Security by default.
 - Use Codex web search as the initial provider.
 - Evaluate responsibilities, skills, team context, and product context rather than relying on a job title alone.
+- Limit Role Discovery and all recruitment or job-market evidence to positions whose work location is explicitly in South Korea. A company's nationality or a globally accessible posting is not sufficient.
+- Allow overseas sources for non-recruitment information such as technology, industry, research, product, and security trends.
 - Exclude community sources such as Reddit, Hacker News, social networks, general forums, and anonymous posts from the MVP.
 - Exclude content whose original Published Date cannot be verified.
 

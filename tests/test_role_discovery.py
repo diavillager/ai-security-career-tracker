@@ -12,12 +12,14 @@ sys.path.insert(0, str(ROOT / "src"))
 from ai_security_career_tracker.role_discovery import (
     Category,
     DiscoveryValidationError,
+    EvidenceType,
     EvidenceSource,
     ExistingRole,
     RoleObservation,
     RoleStatus,
     RESPONSIBILITY_TERMS,
     SEEDS,
+    SOUTH_KOREA_JOB_MARKET,
     build_search_plan,
     default_period,
     normalize_role_name,
@@ -31,7 +33,16 @@ def observation(
     source_url: str = "https://careers.example/roles/agent-security",
     include_supporting_source: bool = True,
 ) -> RoleObservation:
-    sources = [EvidenceSource("Example Careers", source_url, date(2026, 9, 14))]
+    sources = [
+        EvidenceSource(
+            "Example Careers",
+            source_url,
+            date(2026, 9, 14),
+            source_type=EvidenceType.JOB_POSTING,
+            job_location="Seoul",
+            job_market=SOUTH_KOREA_JOB_MARKET,
+        )
+    ]
     if include_supporting_source:
         sources.append(
             EvidenceSource(
@@ -64,7 +75,8 @@ class RoleDiscoveryTests(unittest.TestCase):
         plan = build_search_plan(default_period(date(2026, 9, 15)))
 
         self.assertEqual({query.category for query in plan}, set(Category))
-        self.assertTrue(all("responsibilities" in query.query for query in plan))
+        self.assertTrue(all(query.job_market == SOUTH_KOREA_JOB_MARKET for query in plan))
+        self.assertTrue(all("채용" in query.query and "한국" in query.query for query in plan))
 
     def test_search_vocabulary_includes_every_prd_seed_and_term(self) -> None:
         expected_seeds = {
@@ -161,6 +173,8 @@ class RoleDiscoveryTests(unittest.TestCase):
         self.assertEqual(candidate.status, RoleStatus.CANDIDATE)
         self.assertEqual(candidate.first_discovered, date(2026, 9, 15))
         self.assertEqual(candidate.last_reviewed, date(2026, 9, 15))
+        self.assertEqual(candidate.job_market, SOUTH_KOREA_JOB_MARKET)
+        self.assertEqual(candidate.job_locations, ("Seoul",))
 
     def test_same_run_observations_merge_distinct_evidence(self) -> None:
         outcome = select_new_candidates(
@@ -233,6 +247,60 @@ class RoleDiscoveryTests(unittest.TestCase):
     def test_evidence_requires_original_web_url(self) -> None:
         with self.assertRaises(DiscoveryValidationError):
             EvidenceSource("Example", "not-a-url", date(2026, 9, 15))
+
+    def test_overseas_job_posting_is_rejected(self) -> None:
+        with self.assertRaises(DiscoveryValidationError):
+            EvidenceSource(
+                "Overseas Careers",
+                "https://careers.example/roles/overseas",
+                date(2026, 9, 15),
+                source_type=EvidenceType.JOB_POSTING,
+                job_location="McLean, Virginia",
+                job_market="United States",
+            )
+
+    def test_global_informational_source_is_allowed_as_supporting_evidence(self) -> None:
+        source = EvidenceSource(
+            "Global Engineering Blog",
+            "https://engineering.example/global-agent-security",
+            date(2026, 9, 15),
+        )
+
+        self.assertEqual(source.source_type, EvidenceType.INFORMATIONAL)
+        self.assertIsNone(source.job_market)
+
+    def test_candidate_requires_a_south_korea_job_posting(self) -> None:
+        item = observation()
+        informational_only = RoleObservation(
+            role_name=item.role_name,
+            suggested_category=item.suggested_category,
+            description=item.description,
+            key_responsibilities=item.key_responsibilities,
+            required_skills=item.required_skills,
+            team_description=item.team_description,
+            product_context=item.product_context,
+            discovery_reason=item.discovery_reason,
+            evidence_sources=(
+                EvidenceSource(
+                    "Global Report",
+                    "https://reports.example/agent-security",
+                    date(2026, 9, 14),
+                ),
+                EvidenceSource(
+                    "Global Engineering Blog",
+                    "https://engineering.example/agent-security",
+                    date(2026, 9, 15),
+                ),
+            ),
+        )
+
+        with self.assertRaises(DiscoveryValidationError):
+            select_new_candidates(
+                (informational_only,),
+                (),
+                date(2026, 9, 15),
+                default_period(date(2026, 9, 15)),
+            )
 
 
 if __name__ == "__main__":

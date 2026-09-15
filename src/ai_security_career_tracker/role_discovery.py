@@ -25,6 +25,23 @@ class RoleStatus(StrEnum):
     REJECTED = "Rejected"
 
 
+class EvidenceType(StrEnum):
+    JOB_POSTING = "Job Posting"
+    INFORMATIONAL = "Informational"
+
+
+SOUTH_KOREA_JOB_MARKET = "South Korea"
+SOUTH_KOREA_SEARCH_TERMS = (
+    '"South Korea"',
+    '"Republic of Korea"',
+    "Korea",
+    "한국",
+    "대한민국",
+    "서울",
+    "판교",
+)
+
+
 @dataclass(frozen=True)
 class DateRange:
     start: date
@@ -40,6 +57,7 @@ class SearchQuery:
     category: Category
     query: str
     period: DateRange
+    job_market: str = SOUTH_KOREA_JOB_MARKET
 
 
 @dataclass(frozen=True)
@@ -47,6 +65,9 @@ class EvidenceSource:
     name: str
     url: str
     published_on: date
+    source_type: EvidenceType = EvidenceType.INFORMATIONAL
+    job_location: str | None = None
+    job_market: str | None = None
 
     def __post_init__(self) -> None:
         parsed = urlsplit(self.url)
@@ -60,6 +81,15 @@ class EvidenceSource:
                 "Every evidence source needs a name, an original HTTP or HTTPS URL, "
                 "and a verified published date."
             )
+        if self.source_type is EvidenceType.JOB_POSTING:
+            if not self.job_location or not self.job_location.strip():
+                raise DiscoveryValidationError(
+                    "Every job posting needs an explicitly verified job location."
+                )
+            if self.job_market != SOUTH_KOREA_JOB_MARKET:
+                raise DiscoveryValidationError(
+                    "Role Discovery only accepts job postings for the South Korea job market."
+                )
 
 
 @dataclass(frozen=True)
@@ -109,6 +139,8 @@ class CandidateRole:
     key_responsibilities: tuple[str, ...]
     discovery_reasons: tuple[str, ...]
     evidence_sources: tuple[EvidenceSource, ...]
+    job_locations: tuple[str, ...]
+    job_market: str
     first_discovered: date
     last_reviewed: date
     status: RoleStatus = RoleStatus.CANDIDATE
@@ -197,8 +229,9 @@ def default_period(as_of: date, days: int = 7) -> DateRange:
 
 
 def build_search_plan(period: DateRange) -> tuple[SearchQuery, ...]:
-    """Build one independent, non-whitelist search query for each domain."""
+    """Build one South Korea job-market query for each independent domain."""
     queries: list[SearchQuery] = []
+    locations = " OR ".join(SOUTH_KOREA_SEARCH_TERMS)
     for category in Category:
         roles = " OR ".join(f'"{role}"' for role in SEEDS[category])
         responsibilities = " OR ".join(
@@ -206,9 +239,17 @@ def build_search_plan(period: DateRange) -> tuple[SearchQuery, ...]:
         )
         query = (
             f"({roles}) ({responsibilities}) "
-            f"(job OR careers OR responsibilities OR team)"
+            f"(job OR jobs OR careers OR hiring OR recruit OR 채용 OR 구인) "
+            f"({locations})"
         )
-        queries.append(SearchQuery(category=category, query=query, period=period))
+        queries.append(
+            SearchQuery(
+                category=category,
+                query=query,
+                period=period,
+                job_market=SOUTH_KOREA_JOB_MARKET,
+            )
+        )
     return tuple(queries)
 
 
@@ -287,6 +328,18 @@ def select_new_candidates(
                 f"{group[0].role_name}"
             )
 
+        korean_job_postings = tuple(
+            source
+            for source in evidence_by_url.values()
+            if source.source_type is EvidenceType.JOB_POSTING
+            and source.job_market == SOUTH_KOREA_JOB_MARKET
+        )
+        if not korean_job_postings:
+            raise DiscoveryValidationError(
+                f"At least one South Korea job posting is required for role: "
+                f"{group[0].role_name}"
+            )
+
         candidates.append(
             CandidateRole(
                 role_name=group[0].role_name.strip(),
@@ -299,6 +352,10 @@ def select_new_candidates(
                     [item.discovery_reason for item in group]
                 ),
                 evidence_sources=tuple(evidence_by_url.values()),
+                job_locations=_unique_text(
+                    [source.job_location or "" for source in korean_job_postings]
+                ),
+                job_market=SOUTH_KOREA_JOB_MARKET,
                 first_discovered=discovered_on,
                 last_reviewed=discovered_on,
             )
