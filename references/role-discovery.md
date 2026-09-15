@@ -8,6 +8,7 @@ Use Role Discovery when the user asks to find, discover, or review emerging role
 - When omitted, use seven calendar days including the execution date.
 - If a date phrase can produce materially different ranges, ask before searching.
 - Search AI, Security, and AI × Security independently.
+- Limit the job market to South Korea. Search in Korean and English, and verify the actual work location from the source page.
 
 Seed names start the search but do not limit it:
 
@@ -21,6 +22,8 @@ Expand searches with responsibility terms such as agent, tool use, RAG, evaluati
 
 Use company career pages, official documentation, company or engineering blogs, press releases, research reports, public papers, conference material, government sources, reputable editorial media, and official GitHub project material. Exclude Reddit, Hacker News, social networks, general forums, anonymous posts, and unclear community sources.
 
+Role Discovery is a South Korea employment-market workflow. Every candidate must have at least one job posting whose work location explicitly belongs to South Korea. Remote roles qualify only when the posting explicitly allows employment from South Korea. The employer's headquarters, nationality, page language, or worldwide availability does not prove a South Korea work location. Exclude every overseas or location-unclear job posting. Non-recruitment sources may come from any country and may support responsibility or technology context, but they cannot establish that a role exists in the South Korea job market.
+
 Require a verified original Published Date within the requested search period. A search-engine crawl date, access date, or "currently open" state is not a Published Date. Exclude a source when its original Published Date cannot be verified.
 
 For each possible role, extract:
@@ -32,6 +35,7 @@ For each possible role, extract:
 - Team description;
 - Product or domain context;
 - source name, original URL, and verified Published Date.
+- source type, and for a Job Posting its verified South Korea work location.
 
 Classify from the combined evidence. Security responsibilities inside an Agent Platform role may justify AI × Security, while a Product Security role may also belong there when its actual scope includes LLM applications or agent tool abuse. Mark weak or conflicting evidence as uncertain instead of forcing a category.
 
@@ -48,6 +52,8 @@ Load Role Name and Status for all Roles DB records before evaluating new results
 
 Create a Roles DB item only when the role is new and has at least two distinct original HTTP or HTTPS evidence URLs with verified Published Dates inside the search period.
 
+At least one of the two sources must be a South Korea Job Posting. Additional non-recruitment information may be domestic or overseas.
+
 - Role Name: exact observed role name
 - Category: recommended AI, Security, or AI × Security
 - Status: Candidate
@@ -56,10 +62,10 @@ Create a Roles DB item only when the role is new and has at least two distinct o
 - First Discovered: execution date
 - Last Reviewed: execution date
 - Evidence Sources: newline-separated `Source Name — Original URL` entries
-- Notes: concise discovery reason and any uncertainty
+- Notes: `Job market: South Korea`, verified work location, concise discovery reason, and any uncertainty
 
 Never alter the pre-run Approved-role snapshot, call Trend Update, or use a new Candidate to expand searches during the same run.
 
 ## Report
 
-Report the explicit date range, all three searched domains, source counts, excluded counts, numbered new Candidates, and existing-role matches. Each candidate needs its recommended Category, Description, Key Responsibilities, discovery reason, and Evidence Sources. End with a clear request for candidate approval or rejection; do not change statuses until the user responds.
+Report the explicit date range, `Job market: South Korea`, all three searched domains, source counts, overseas or location-unclear job-posting exclusion counts, other excluded counts, numbered new Candidates, and existing-role matches. Each candidate needs its verified South Korea work location, recommended Category, Description, Key Responsibilities, discovery reason, and Evidence Sources. End with a clear request for candidate approval or rejection; do not change statuses until the user responds.

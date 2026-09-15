@@ -18,6 +18,7 @@ The MVP foundation, Notion database setup, and Role Discovery are implemented. A
 - Use Codex web search as the default search provider.
 - Treat search-provider access as a replaceable boundary rather than embedding provider-specific assumptions throughout the workflow.
 - Keep AI, Security, and AI × Security in the default search scope.
+- Limit Role Discovery and every recruitment or job-market item to verified South Korea work locations. Overseas non-recruitment information remains allowed.
 - Store new roles as Candidate. Never use them for Trend Update before the user approves them.
 - Keep Rejected roles as review history instead of deleting them.
 - Preserve the original source URL for every saved role or trend.
@@ -43,10 +44,11 @@ Read [references/role-discovery.md](references/role-discovery.md) for search pla
 - Use the latest 7 calendar days ending today when the request has no period.
 - Load every existing Role Name and Status before searching. Candidate, Approved, and Rejected records all block creation of another Candidate with the same normalized role name.
 - Search AI, Security, and AI × Security independently with seed names and responsibility terms. Seeds guide discovery but never form a whitelist.
-- Use job postings and allowed official or editorial sources. Exclude community and social sources.
+- Search the South Korea job market in Korean and English. Use only job postings whose source page explicitly verifies a South Korea work location; company nationality and page language are not location evidence.
+- Use allowed official or editorial sources for supporting context. Overseas sources are allowed only for non-recruitment information; exclude community and social sources.
 - Require an original Published Date inside the search period. Do not substitute a crawl date, access date, or current-open status; exclude undated content.
 - Evaluate title, responsibilities, skills, team, and product context together. Do not classify from the title alone.
-- Store only evidence-backed new roles with Status `Candidate`; require at least two distinct sources and preserve every supporting source name and original URL.
+- Store only evidence-backed new roles with Status `Candidate`; require at least two distinct sources, including at least one verified South Korea job posting, and preserve every supporting source name and original URL.
 - Keep the Approved-role snapshot from before the run unchanged. Do not start Trend Update or use newly created Candidates as search terms in the same run.
 - Report numbered candidates and existing-role matches separately so the user can review them.
 
