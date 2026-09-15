@@ -46,12 +46,19 @@ class SearchQuery:
 class EvidenceSource:
     name: str
     url: str
+    published_on: date
 
     def __post_init__(self) -> None:
         parsed = urlsplit(self.url)
-        if not self.name.strip() or parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        if (
+            not self.name.strip()
+            or parsed.scheme not in {"http", "https"}
+            or not parsed.netloc
+            or not isinstance(self.published_on, date)
+        ):
             raise DiscoveryValidationError(
-                "Every evidence source needs a name and an original HTTP or HTTPS URL."
+                "Every evidence source needs a name, an original HTTP or HTTPS URL, "
+                "and a verified published date."
             )
 
 
@@ -67,17 +74,29 @@ class RoleObservation:
     suggested_category: Category
     description: str
     key_responsibilities: tuple[str, ...]
+    required_skills: tuple[str, ...]
+    team_description: str
+    product_context: str
     discovery_reason: str
     evidence_sources: tuple[EvidenceSource, ...]
 
     def __post_init__(self) -> None:
-        required_text = (self.role_name, self.description, self.discovery_reason)
+        required_text = (
+            self.role_name,
+            self.description,
+            self.team_description,
+            self.product_context,
+            self.discovery_reason,
+        )
         if not all(value.strip() for value in required_text):
             raise DiscoveryValidationError(
-                "Role name, description, and discovery reason are required."
+                "Role name, description, team, product context, and discovery reason "
+                "are required."
             )
         if not any(value.strip() for value in self.key_responsibilities):
             raise DiscoveryValidationError("At least one responsibility is required.")
+        if not any(value.strip() for value in self.required_skills):
+            raise DiscoveryValidationError("At least one required skill is required.")
         if not self.evidence_sources:
             raise DiscoveryValidationError("At least one evidence source is required.")
 
@@ -215,6 +234,7 @@ def select_new_candidates(
     observations: tuple[RoleObservation, ...],
     existing_roles: tuple[ExistingRole, ...],
     discovered_on: date,
+    search_period: DateRange,
 ) -> DiscoveryOutcome:
     """Exclude every existing status and merge same-run evidence for new roles."""
     existing_by_name = {
@@ -224,6 +244,15 @@ def select_new_candidates(
     existing_matches: list[ExistingRoleMatch] = []
 
     for observation in observations:
+        if any(
+            source.published_on < search_period.start
+            or source.published_on > search_period.end
+            for source in observation.evidence_sources
+        ):
+            raise DiscoveryValidationError(
+                f"Every evidence source must be published within the search period: "
+                f"{observation.role_name}"
+            )
         normalized_name = normalize_role_name(observation.role_name)
         if not normalized_name:
             raise DiscoveryValidationError("Role name must not be blank.")

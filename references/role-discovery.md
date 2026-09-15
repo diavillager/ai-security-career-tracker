@@ -21,6 +21,8 @@ Expand searches with responsibility terms such as agent, tool use, RAG, evaluati
 
 Use company career pages, official documentation, company or engineering blogs, press releases, research reports, public papers, conference material, government sources, reputable editorial media, and official GitHub project material. Exclude Reddit, Hacker News, social networks, general forums, anonymous posts, and unclear community sources.
 
+Require a verified original Published Date within the requested search period. A search-engine crawl date, access date, or "currently open" state is not a Published Date. Exclude a source when its original Published Date cannot be verified.
+
 For each possible role, extract:
 
 - exact Job title;
@@ -29,7 +31,7 @@ For each possible role, extract:
 - Required skills;
 - Team description;
 - Product or domain context;
-- source name and original URL.
+- source name, original URL, and verified Published Date.
 
 Classify from the combined evidence. Security responsibilities inside an Agent Platform role may justify AI × Security, while a Product Security role may also belong there when its actual scope includes LLM applications or agent tool abuse. Mark weak or conflicting evidence as uncertain instead of forcing a category.
 
@@ -44,7 +46,7 @@ Load Role Name and Status for all Roles DB records before evaluating new results
 
 ## Candidate storage
 
-Create a Roles DB item only when the role is new and has at least two distinct original HTTP or HTTPS evidence URLs.
+Create a Roles DB item only when the role is new and has at least two distinct original HTTP or HTTPS evidence URLs with verified Published Dates inside the search period.
 
 - Role Name: exact observed role name
 - Category: recommended AI, Security, or AI × Security

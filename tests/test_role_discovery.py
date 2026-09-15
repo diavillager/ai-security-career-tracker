@@ -31,12 +31,13 @@ def observation(
     source_url: str = "https://careers.example/roles/agent-security",
     include_supporting_source: bool = True,
 ) -> RoleObservation:
-    sources = [EvidenceSource("Example Careers", source_url)]
+    sources = [EvidenceSource("Example Careers", source_url, date(2026, 9, 14))]
     if include_supporting_source:
         sources.append(
             EvidenceSource(
                 "Example Engineering",
                 "https://engineering.example/agent-security-context",
+                date(2026, 9, 15),
             )
         )
     return RoleObservation(
@@ -44,6 +45,9 @@ def observation(
         suggested_category=category,
         description="Secures agent tools, identities, and runtime boundaries.",
         key_responsibilities=("Threat model agent tool use", "Design sandbox controls"),
+        required_skills=("Python", "Threat modeling"),
+        team_description="Agent Security team",
+        product_context="Agent execution platform",
         discovery_reason="Responsibilities combine agent infrastructure and product security.",
         evidence_sources=tuple(sources),
     )
@@ -133,7 +137,12 @@ class RoleDiscoveryTests(unittest.TestCase):
             ExistingRole(f"existing {status.value}", status) for status in RoleStatus
         )
 
-        outcome = select_new_candidates(observations, existing, date(2026, 9, 15))
+        outcome = select_new_candidates(
+            observations,
+            existing,
+            date(2026, 9, 15),
+            default_period(date(2026, 9, 15)),
+        )
 
         self.assertEqual(outcome.new_candidates, ())
         self.assertEqual(
@@ -142,7 +151,10 @@ class RoleDiscoveryTests(unittest.TestCase):
 
     def test_new_role_is_always_candidate(self) -> None:
         outcome = select_new_candidates(
-            (observation(),), (), date(2026, 9, 15)
+            (observation(),),
+            (),
+            date(2026, 9, 15),
+            default_period(date(2026, 9, 15)),
         )
 
         candidate = outcome.new_candidates[0]
@@ -164,6 +176,7 @@ class RoleDiscoveryTests(unittest.TestCase):
             ),
             (),
             date(2026, 9, 15),
+            default_period(date(2026, 9, 15)),
         )
 
         self.assertEqual(len(outcome.new_candidates), 1)
@@ -175,6 +188,34 @@ class RoleDiscoveryTests(unittest.TestCase):
                 (observation(include_supporting_source=False),),
                 (),
                 date(2026, 9, 15),
+                default_period(date(2026, 9, 15)),
+            )
+
+    def test_source_outside_search_period_is_rejected(self) -> None:
+        item = observation()
+        old_source = EvidenceSource(
+            "Old source",
+            "https://careers.example/old-role",
+            date(2026, 9, 8),
+        )
+        outside_period = RoleObservation(
+            role_name=item.role_name,
+            suggested_category=item.suggested_category,
+            description=item.description,
+            key_responsibilities=item.key_responsibilities,
+            required_skills=item.required_skills,
+            team_description=item.team_description,
+            product_context=item.product_context,
+            discovery_reason=item.discovery_reason,
+            evidence_sources=(item.evidence_sources[0], old_source),
+        )
+
+        with self.assertRaises(DiscoveryValidationError):
+            select_new_candidates(
+                (outside_period,),
+                (),
+                date(2026, 9, 15),
+                default_period(date(2026, 9, 15)),
             )
 
     def test_conflicting_categories_require_review(self) -> None:
@@ -186,11 +227,12 @@ class RoleDiscoveryTests(unittest.TestCase):
                 ),
                 (),
                 date(2026, 9, 15),
+                default_period(date(2026, 9, 15)),
             )
 
     def test_evidence_requires_original_web_url(self) -> None:
         with self.assertRaises(DiscoveryValidationError):
-            EvidenceSource("Example", "not-a-url")
+            EvidenceSource("Example", "not-a-url", date(2026, 9, 15))
 
 
 if __name__ == "__main__":
