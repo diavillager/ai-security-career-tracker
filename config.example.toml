@@ -1,0 +1,12 @@
+[project]
+name = "AI Security Career Tracker"
+timezone = "Asia/Seoul"
+default_search_days = 7
+
+[search]
+provider = "codex_web"
+
+[notion]
+project_page_url = ""
+roles_database_id = ""
+trends_database_id = ""

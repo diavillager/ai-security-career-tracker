@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Security Career Tracker"
+  short_description: "AI 보안 직무를 발견하고 승인된 직무 동향을 수집합니다"
+  default_prompt: "Use $ai-security-career-tracker to discover emerging AI security roles from the last 7 days."
