@@ -114,7 +114,10 @@ SEEDS: dict[Category, tuple[str, ...]] = {
         "AI Agent Engineer",
         "Agent Engineer",
         "LLM Engineer",
+        "Generative AI Engineer",
         "AI Platform Engineer",
+        "Agent Platform Engineer",
+        "Agent Infrastructure Engineer",
         "AI Evaluation Engineer",
     ),
     Category.SECURITY: (
@@ -123,6 +126,7 @@ SEEDS: dict[Category, tuple[str, ...]] = {
         "Cloud Security Engineer",
         "Security Platform Engineer",
         "IAM Engineer",
+        "Security Engineer",
     ),
     Category.AI_SECURITY: (
         "AI Security Engineer",
@@ -130,18 +134,38 @@ SEEDS: dict[Category, tuple[str, ...]] = {
         "GenAI Security Engineer",
         "LLM Security Engineer",
         "AI Product Security",
+        "AI Platform Security",
     ),
 }
 
 RESPONSIBILITY_TERMS: dict[Category, tuple[str, ...]] = {
-    Category.AI: ("agent", "RAG", "evaluation", "model serving", "orchestration"),
-    Category.SECURITY: ("IAM", "authorization", "threat modeling", "Zero Trust"),
+    Category.AI: (
+        "agent",
+        "tool use",
+        "RAG",
+        "evaluation",
+        "model serving",
+        "orchestration",
+        "observability",
+    ),
+    Category.SECURITY: (
+        "IAM",
+        "authorization",
+        "OAuth",
+        "OIDC",
+        "threat modeling",
+        "policy enforcement",
+        "data governance",
+        "Zero Trust",
+    ),
     Category.AI_SECURITY: (
         "agent security",
         "prompt injection",
         "sandbox",
         "workload identity",
+        "policy enforcement",
         "audit logging",
+        "data governance",
     ),
 }
 

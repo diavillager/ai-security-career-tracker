@@ -16,6 +16,8 @@ from ai_security_career_tracker.role_discovery import (
     ExistingRole,
     RoleObservation,
     RoleStatus,
+    RESPONSIBILITY_TERMS,
+    SEEDS,
     build_search_plan,
     default_period,
     normalize_role_name,
@@ -59,6 +61,59 @@ class RoleDiscoveryTests(unittest.TestCase):
 
         self.assertEqual({query.category for query in plan}, set(Category))
         self.assertTrue(all("responsibilities" in query.query for query in plan))
+
+    def test_search_vocabulary_includes_every_prd_seed_and_term(self) -> None:
+        expected_seeds = {
+            "Applied AI Engineer",
+            "AI Agent Engineer",
+            "Agent Engineer",
+            "LLM Engineer",
+            "Generative AI Engineer",
+            "AI Platform Engineer",
+            "Agent Platform Engineer",
+            "Agent Infrastructure Engineer",
+            "AI Evaluation Engineer",
+            "Product Security Engineer",
+            "Application Security Engineer",
+            "Cloud Security Engineer",
+            "Security Platform Engineer",
+            "IAM Engineer",
+            "Security Engineer",
+            "AI Security Engineer",
+            "Agent Security Engineer",
+            "GenAI Security Engineer",
+            "LLM Security Engineer",
+            "AI Product Security",
+            "AI Platform Security",
+        }
+        expected_terms = {
+            "agent",
+            "tool use",
+            "RAG",
+            "evaluation",
+            "model serving",
+            "orchestration",
+            "observability",
+            "IAM",
+            "authorization",
+            "OAuth",
+            "OIDC",
+            "sandbox",
+            "threat modeling",
+            "workload identity",
+            "policy enforcement",
+            "audit logging",
+            "data governance",
+            "Zero Trust",
+        }
+
+        actual_seeds = {value for values in SEEDS.values() for value in values}
+        actual_terms = {
+            value for values in RESPONSIBILITY_TERMS.values() for value in values
+        }
+
+        self.assertTrue(expected_seeds <= actual_seeds)
+        self.assertTrue(expected_terms <= actual_terms)
 
     def test_role_name_normalization_is_not_semantic(self) -> None:
         self.assertEqual(

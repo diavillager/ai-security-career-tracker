@@ -45,7 +45,7 @@ Read [references/role-discovery.md](references/role-discovery.md) for search pla
 - Search AI, Security, and AI × Security independently with seed names and responsibility terms. Seeds guide discovery but never form a whitelist.
 - Use job postings and allowed official or editorial sources. Exclude community and social sources.
 - Evaluate title, responsibilities, skills, team, and product context together. Do not classify from the title alone.
-- Store only evidence-backed new roles with Status `Candidate`; preserve every supporting source name and original URL.
+- Store only evidence-backed new roles with Status `Candidate`; require at least two distinct sources and preserve every supporting source name and original URL.
 - Keep the Approved-role snapshot from before the run unchanged. Do not start Trend Update or use newly created Candidates as search terms in the same run.
 - Report numbered candidates and existing-role matches separately so the user can review them.
 

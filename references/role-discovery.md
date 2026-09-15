@@ -44,7 +44,7 @@ Load Role Name and Status for all Roles DB records before evaluating new results
 
 ## Candidate storage
 
-Create a Roles DB item only when the role is new and has an original HTTP or HTTPS evidence URL.
+Create a Roles DB item only when the role is new and has at least two distinct original HTTP or HTTPS evidence URLs.
 
 - Role Name: exact observed role name
 - Category: recommended AI, Security, or AI × Security
