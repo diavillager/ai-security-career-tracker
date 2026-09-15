@@ -75,18 +75,59 @@ def persist_database_config(path: Path, config: NotionDatabaseConfig) -> bool:
     def toml_string(value: str) -> str:
         return json.dumps(value, ensure_ascii=False)
 
-    content = (
-        '[project]\n'
-        'name = "AI Security Career Tracker"\n'
-        'timezone = "Asia/Seoul"\n'
-        'default_search_days = 7\n\n'
-        '[search]\n'
-        'provider = "codex_web"\n\n'
-        '[notion]\n'
-        f'project_page_url = {toml_string(config.project_page_url)}\n'
-        f'roles_database_id = {toml_string(config.roles_database_id)}\n'
-        f'trends_database_id = {toml_string(config.trends_database_id)}\n'
-    )
+    replacements = {
+        "project_page_url": toml_string(config.project_page_url),
+        "roles_database_id": toml_string(config.roles_database_id),
+        "trends_database_id": toml_string(config.trends_database_id),
+    }
+    if path.exists():
+        lines = path.read_text(encoding="utf-8").splitlines()
+        section_start = next(
+            (index for index, line in enumerate(lines) if line.strip() == "[notion]"),
+            None,
+        )
+        if section_start is None:
+            if lines and lines[-1].strip():
+                lines.append("")
+            lines.append("[notion]")
+            section_start = len(lines) - 1
+
+        section_end = next(
+            (
+                index
+                for index in range(section_start + 1, len(lines))
+                if lines[index].strip().startswith("[")
+                and lines[index].strip().endswith("]")
+            ),
+            len(lines),
+        )
+        found: set[str] = set()
+        for index in range(section_start + 1, section_end):
+            stripped = lines[index].lstrip()
+            key = stripped.split("=", 1)[0].strip() if "=" in stripped else ""
+            if key in replacements:
+                indentation = lines[index][: len(lines[index]) - len(stripped)]
+                lines[index] = f"{indentation}{key} = {replacements[key]}"
+                found.add(key)
+
+        missing = [key for key in replacements if key not in found]
+        lines[section_end:section_end] = [
+            f"{key} = {replacements[key]}" for key in missing
+        ]
+        content = "\n".join(lines).rstrip() + "\n"
+    else:
+        content = (
+            '[project]\n'
+            'name = "AI Security Career Tracker"\n'
+            'timezone = "Asia/Seoul"\n'
+            'default_search_days = 7\n\n'
+            '[search]\n'
+            'provider = "codex_web"\n\n'
+            '[notion]\n'
+            f'project_page_url = {replacements["project_page_url"]}\n'
+            f'roles_database_id = {replacements["roles_database_id"]}\n'
+            f'trends_database_id = {replacements["trends_database_id"]}\n'
+        )
     path.write_text(content, encoding="utf-8")
     return True
 

@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
-import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
+SCRIPT = ROOT / "src" / "ai_security_career_tracker" / "notion_databases.py"
 
 from ai_security_career_tracker.notion_databases import (
     NotionConfigurationError,
@@ -25,6 +27,31 @@ CONFIG = NotionDatabaseConfig(
 
 
 class NotionDatabaseConfigTests(unittest.TestCase):
+    def test_documented_cli_runs_from_project_root(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "config.toml"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--config",
+                    str(path),
+                    "--project-page-url",
+                    CONFIG.project_page_url,
+                    "--roles-database-id",
+                    CONFIG.roles_database_id,
+                    "--trends-database-id",
+                    CONFIG.trends_database_id,
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(load_database_config(path), CONFIG)
+
     def test_missing_config_is_unconfigured(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             loaded = load_database_config(Path(directory) / "config.toml")
@@ -62,6 +89,24 @@ class NotionDatabaseConfigTests(unittest.TestCase):
                 )
 
             self.assertEqual(path.read_text(encoding="utf-8"), original)
+
+    def test_existing_non_notion_settings_are_preserved(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "config.toml"
+            path.write_text(
+                '[project]\ntimezone = "UTC"\n\n'
+                '[search]\nprovider = "custom_provider"\n\n'
+                '[notion]\nproject_page_url = ""\n'
+                'roles_database_id = ""\ntrends_database_id = ""\n',
+                encoding="utf-8",
+            )
+
+            persist_database_config(path, CONFIG)
+            content = path.read_text(encoding="utf-8")
+
+            self.assertIn('timezone = "UTC"', content)
+            self.assertIn('provider = "custom_provider"', content)
+            self.assertEqual(load_database_config(path), CONFIG)
 
     def test_partial_identifier_pair_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

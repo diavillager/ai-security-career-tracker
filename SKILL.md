@@ -34,7 +34,7 @@ Read [references/notion-databases.md](references/notion-databases.md) whenever c
 - When neither identifier is saved, inspect the project page for existing Roles DB and Trends DB before creating anything.
 - Treat a partial configuration, inaccessible saved identifier, or mismatched database as a stopping condition. Report it instead of creating a replacement.
 - Create Roles DB first, then create Trends DB with `Related Roles` pointing to the Roles data source.
-- Save both data source identifiers together with `python -m ai_security_career_tracker.notion_databases` only after both schemas have been verified.
+- Save both data source identifiers together with `python src/ai_security_career_tracker/notion_databases.py` only after both schemas have been verified.
 
 ## Authorization boundaries
 
