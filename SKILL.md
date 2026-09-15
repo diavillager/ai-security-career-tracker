@@ -9,7 +9,7 @@ Track changing roles across AI, Security, and AI × Security while keeping role 
 
 ## Current development boundary
 
-This repository currently contains the MVP foundation. Do not claim that role discovery, Notion database creation, approval changes, or trend collection is implemented until the corresponding feature and tests exist.
+The MVP foundation and Notion database setup are implemented. Role discovery, approval changes, and trend collection are not implemented yet; do not claim otherwise.
 
 ## Fixed product rules
 
@@ -24,6 +24,17 @@ This repository currently contains the MVP foundation. Do not claim that role di
 - Use normalized or canonical URL equality as the only MVP duplicate rule.
 
 Read [references/product-requirements.md](references/product-requirements.md) before implementing or changing a feature.
+
+## Notion database setup
+
+Read [references/notion-databases.md](references/notion-databases.md) whenever creating, checking, or reconnecting the project databases.
+
+- Confirm the connected workspace and project page before any write.
+- Inspect `config.toml` first. When both database identifiers are saved, fetch and reuse them.
+- When neither identifier is saved, inspect the project page for existing Roles DB and Trends DB before creating anything.
+- Treat a partial configuration, inaccessible saved identifier, or mismatched database as a stopping condition. Report it instead of creating a replacement.
+- Create Roles DB first, then create Trends DB with `Related Roles` pointing to the Roles data source.
+- Save both data source identifiers together with `python src/ai_security_career_tracker/notion_databases.py` only after both schemas have been verified.
 
 ## Authorization boundaries
 
