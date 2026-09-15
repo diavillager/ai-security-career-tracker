@@ -12,6 +12,8 @@ Role Discovery finds new role names and stores only new roles as Candidate. Tren
 - Use Codex web search as the initial provider.
 - Evaluate responsibilities, skills, team context, and product context rather than relying on a job title alone.
 - Limit Role Discovery and all recruitment or job-market evidence to positions whose work location is explicitly in South Korea. A company's nationality or a globally accessible posting is not sufficient.
+- Prioritize employer career pages and South Korean hiring platforms such as Saramin, JobKorea, Wanted, and Jumpit for Role Discovery. This is a preferred-source order, not a closed allowlist.
+- Use another domestic or international job site only when the posting itself verifies a South Korea work location, and validate it against the employer's original posting whenever feasible. Do not use a global job aggregator as the initial search target.
 - Allow overseas sources for non-recruitment information such as technology, industry, research, product, and security trends.
 - Exclude community sources such as Reddit, Hacker News, social networks, general forums, and anonymous posts from the MVP.
 - Exclude content whose original Published Date cannot be verified.
