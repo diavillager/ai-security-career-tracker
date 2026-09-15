@@ -9,7 +9,7 @@ Track changing roles across AI, Security, and AI × Security while keeping role 
 
 ## Current development boundary
 
-The MVP foundation and Notion database setup are implemented. Role discovery, approval changes, and trend collection are not implemented yet; do not claim otherwise.
+The MVP foundation, Notion database setup, and Role Discovery are implemented. Approval changes and trend collection are not implemented yet; do not claim otherwise.
 
 ## Fixed product rules
 
@@ -35,6 +35,19 @@ Read [references/notion-databases.md](references/notion-databases.md) whenever c
 - Treat a partial configuration, inaccessible saved identifier, or mismatched database as a stopping condition. Report it instead of creating a replacement.
 - Create Roles DB first, then create Trends DB with `Related Roles` pointing to the Roles data source.
 - Save both data source identifiers together with `python src/ai_security_career_tracker/notion_databases.py` only after both schemas have been verified.
+
+## Role Discovery
+
+Read [references/role-discovery.md](references/role-discovery.md) for search planning, evidence requirements, Notion field mapping, and reporting.
+
+- Use the latest 7 calendar days ending today when the request has no period.
+- Load every existing Role Name and Status before searching. Candidate, Approved, and Rejected records all block creation of another Candidate with the same normalized role name.
+- Search AI, Security, and AI × Security independently with seed names and responsibility terms. Seeds guide discovery but never form a whitelist.
+- Use job postings and allowed official or editorial sources. Exclude community and social sources.
+- Evaluate title, responsibilities, skills, team, and product context together. Do not classify from the title alone.
+- Store only evidence-backed new roles with Status `Candidate`; preserve every supporting source name and original URL.
+- Keep the Approved-role snapshot from before the run unchanged. Do not start Trend Update or use newly created Candidates as search terms in the same run.
+- Report numbered candidates and existing-role matches separately so the user can review them.
 
 ## Authorization boundaries
 

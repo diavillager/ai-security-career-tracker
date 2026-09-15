@@ -4,7 +4,7 @@ AI, Security, AI × Security 영역의 새로운 직무를 발견하고, 사용�
 
 ## 현재 단계
 
-프로젝트 기본 골격과 Notion 데이터베이스 생성·식별자 재사용 기능까지 구현했습니다. Role Discovery, 승인과 거절, Trend Update는 아직 구현되지 않았습니다.
+프로젝트 기본 골격, Notion 데이터베이스 생성·재사용, Role Discovery까지 구현했습니다. 승인과 거절, Trend Update는 아직 구현되지 않았습니다.
 
 ## 확정된 기본값
 
@@ -23,8 +23,11 @@ AI, Security, AI × Security 영역의 새로운 직무를 발견하고, 사용�
 - `config.example.toml`: 비밀정보가 없는 설정 예시
 - `references/product-requirements.md`: MVP 범위와 단계별 구현 기준
 - `references/notion-databases.md`: Roles DB와 Trends DB의 스키마 및 재사용 절차
+- `references/role-discovery.md`: 검색, 후보 판정, Notion 저장 및 결과 보고 기준
 - `src/ai_security_career_tracker/notion_databases.py`: 로컬 DB 식별자 검증 및 저장 도구
+- `src/ai_security_career_tracker/role_discovery.py`: 세 영역 검색 계획과 신규 Candidate 판정 도구
 - `tests/test_foundation.py`: 기본 구조와 설정 검증
+- `tests/test_role_discovery.py`: 검색 기간, 중복 차단, 다중 출처 및 Candidate 상태 검증
 
 실제 Notion 데이터베이스 식별자는 Git에 올라가지 않는 `config.toml`에 저장합니다. 두 식별자 중 하나만 있거나 기존 값과 다른 값으로 바꾸려 하면 도구가 중단됩니다.
 
