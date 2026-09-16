@@ -4,7 +4,7 @@ AI, Security, AI × Security 영역의 새로운 직무를 발견하고, 사용�
 
 ## 현재 단계
 
-프로젝트 기본 골격, Notion 데이터베이스 생성·재사용, Role Discovery의 영역별 조사 Agent 세 개와 종합 근거 검토 Agent까지 구현했습니다. 승인과 거절, Trend Update는 아직 구현되지 않았습니다.
+프로젝트 기본 골격, Notion 데이터베이스 생성·재사용, Role Discovery의 영역별 조사 Agent 세 개와 종합 근거 검토 Agent, Candidate 승인·거절까지 구현했습니다. Trend Update는 아직 구현되지 않았습니다.
 
 ## 확정된 기본값
 
@@ -38,15 +38,20 @@ AI, Security, AI × Security 영역의 새로운 직무를 발견하고, 사용�
 - `references/role-discovery.md`: 검색, 후보 판정, Notion 저장 및 결과 보고 기준
 - `references/role-discovery-agent-contract.md`: 세 조사 Agent의 공통 입력·출력 계약
 - `references/role-evidence-reviewer-contract.md`: 종합 근거 검토 Agent의 입력·출력 계약
+- `references/candidate-review.md`: Candidate 자연어 결정, 검증, Notion 적용과 실패 보고 절차
 - `src/ai_security_career_tracker/notion_databases.py`: 로컬 DB 식별자 검증 및 저장 도구
 - `src/ai_security_career_tracker/role_discovery.py`: 세 영역 검색 계획과 신규 Candidate 판정 도구
+- `src/ai_security_career_tracker/candidate_review.py`: Candidate 승인·거절 계획과 Notion 속성 적용 도구
 - `tests/test_foundation.py`: 기본 구조와 설정 검증
 - `tests/test_role_discovery.py`: 검색 기간, 중복 차단, 다중 출처 및 Candidate 상태 검증
 - `tests/test_role_discovery_agent.py`: Agent 설정과 역할 경계 검증
+- `tests/test_candidate_review.py`: 승인·거절 계획, Notion 속성 연결과 쓰기 실패 검증
 
 실제 Notion 데이터베이스 식별자는 Git에 올라가지 않는 `config.toml`에 저장합니다. 두 식별자 중 하나만 있거나 기존 값과 다른 값으로 바꾸려 하면 도구가 중단됩니다.
 
 세 Role Discovery 조사 Agent는 각 영역의 웹 검색과 근거 정리만 병렬로 담당합니다. 부모 Skill이 동일한 기간과 기존 직무 snapshot을 제공하고, 세 결과가 모두 구조 검사를 통과하면 `role_evidence_reviewer`가 출처 접근성·독립성, 의미 중복과 분류 모호성을 순차 검토합니다. 그 뒤 Python 검증으로 Candidate 초안을 판정합니다. 어떤 Agent도 Notion 저장, Candidate 승인·거절, Trend Update를 수행하지 않습니다.
+
+Candidate 승인·거절은 사용자가 대상과 결정을 명시한 뒤에만 실행합니다. Python이 전체 요청을 먼저 검증하고 정확한 Notion 속성 변경을 만든 다음, 확인된 Roles DB의 `Status`, `Last Reviewed`와 필요한 `Notes`만 갱신합니다. 중간 실패가 발생하면 성공한 page와 실패한 page를 구분해 보고하고 데이터베이스를 다시 조회합니다.
 
 ## 테스트
 
