@@ -1,48 +1,48 @@
-# Notion database setup
+# Notion 데이터베이스 설정
 
-Use this procedure only under the confirmed AI Security Career Tracker project page.
+이 절차는 확인된 AI Security Career Tracker 프로젝트 페이지 아래에서만 사용합니다.
 
 ## Roles DB
 
-Create Roles DB first with these properties:
+먼저 다음 속성을 가진 Roles DB를 만듭니다.
 
-| Property | Type | Allowed values or purpose |
+| Property | Type | 허용값 또는 용도 |
 | --- | --- | --- |
-| Role Name | Title | Canonical role name |
+| Role Name | Title | 표준 Role Name |
 | Category | Select | AI, Security, AI × Security |
 | Status | Select | Candidate, Approved, Rejected |
 | Experience Level | Select | 신입, 경력, 신입·경력, 미확인 |
-| Description | Rich text | Short role definition |
-| Key Responsibilities | Rich text | Evidence-based responsibilities |
-| First Discovered | Date | First verified discovery date |
-| Last Reviewed | Date | Most recent review date |
-| Evidence Sources | Rich text | Original evidence URLs |
-| Notes | Rich text | Review notes |
+| Description | Rich text | 짧은 직무 정의 |
+| Key Responsibilities | Rich text | 근거에 기반한 핵심 책임 |
+| First Discovered | Date | 처음 확인한 날짜 |
+| Last Reviewed | Date | 최근 검토 날짜 |
+| Evidence Sources | Rich text | 원본 근거 URL |
+| Notes | Rich text | 검토 메모 |
 
 ## Trends DB
 
-Create Trends DB only after Roles DB has a verified data source identifier.
+Roles DB의 data source 식별자를 확인한 뒤에만 Trends DB를 만듭니다.
 
-| Property | Type | Allowed values or purpose |
+| Property | Type | 허용값 또는 용도 |
 | --- | --- | --- |
-| Title | Title | Source title |
-| Summary | Rich text | Concise source summary |
-| Key Insight | Rich text | Role-relevant finding |
+| Title | Title | 출처 제목 |
+| Summary | Rich text | 간결한 출처 요약 |
+| Key Insight | Rich text | 직무와 관련된 핵심 발견 |
 | Source Type | Select | Job Posting, Report, Article, Research, Official |
-| Source Name | Rich text | Publisher or organization |
-| Original URL | URL | Original source URL |
-| Published Date | Date | Verified publication date |
-| Collected Date | Date | Collection date |
+| Source Name | Rich text | 발행자 또는 기관 |
+| Original URL | URL | 원본 출처 URL |
+| Published Date | Date | 확인된 게시일 |
+| Collected Date | Date | 수집일 |
 | Related Roles | Relation | Roles DB data source |
 | Domain | Select | AI, Security, AI × Security |
 
-## Safe creation and reuse
+## 안전한 생성과 재사용
 
-1. Fetch the connected Notion identity and the configured project page.
-2. Read `config.toml` with `load_database_config`.
-3. If both identifiers exist, fetch both data sources and verify their titles and required properties. Reuse them when valid.
-4. If neither identifier exists, inspect the project page for existing databases with the exact titles before creating anything.
-5. Create Roles DB, verify its schema, then create Trends DB with a one-way `Related Roles` relation to the Roles data source.
-6. Verify both schemas and persist both identifiers together. Never commit `config.toml`.
+1. 연결된 Notion 사용자 정보와 설정된 프로젝트 페이지를 조회합니다.
+2. load_database_config로 config.toml을 읽습니다.
+3. 두 식별자가 모두 있으면 두 data source를 조회하고 제목과 필수 속성을 확인합니다. 올바르면 재사용합니다.
+4. 두 식별자가 모두 없으면 새로 만들기 전에 프로젝트 페이지에서 제목이 정확히 일치하는 기존 데이터베이스를 찾습니다.
+5. Roles DB를 만들고 구조를 확인한 다음, Roles data source로 향하는 단방향 Related Roles relation을 가진 Trends DB를 만듭니다.
+6. 두 구조를 검증하고 두 식별자를 함께 저장합니다. config.toml은 절대 커밋하지 않습니다.
 
-Stop and ask the user for direction when only one identifier is present, a saved database cannot be fetched, a schema does not match, or an existing same-title database is ambiguous. Do not create a replacement automatically.
+식별자가 하나만 있거나, 저장된 데이터베이스를 조회할 수 없거나, 구조가 맞지 않거나, 제목이 같은 기존 데이터베이스 중 대상을 확정할 수 없으면 작업을 중단하고 사용자에게 방향을 묻습니다. 대체 데이터베이스를 자동으로 만들지 않습니다.
