@@ -9,7 +9,7 @@ AI, Security, AI × Security 영역에서 변화하는 직무를 추적하되, �
 
 ## 현재 개발 범위
 
-MVP 기본 구조, Notion 데이터베이스 설정, Role Discovery까지 구현됐습니다. 승인·거절 변경과 Trend Update는 아직 구현되지 않았으므로 구현됐다고 안내하지 않습니다.
+MVP 기본 구조, Notion 데이터베이스 설정, Role Discovery와 Candidate 승인·거절 변경까지 구현됐습니다. Trend Update는 아직 구현되지 않았으므로 구현됐다고 안내하지 않습니다.
 
 ## 언어 지침
 
@@ -75,6 +75,21 @@ MVP 기본 구조, Notion 데이터베이스 설정, Role Discovery까지 구현
 - 충분한 근거가 있는 새 직무만 Status Candidate로 저장합니다. 서로 다른 출처를 최소 2개 요구하고 그중 하나 이상은 대한민국 근무가 확인된 채용 공고여야 하며, 모든 출처 이름과 원본 URL을 보존합니다.
 - 실행 전에 조회한 Approved 직무 목록은 실행 중 바꾸지 않습니다. 같은 실행에서 Trend Update를 시작하거나 새 Candidate를 검색어로 사용하지 않습니다.
 - 사용자가 검토할 수 있도록 번호가 붙은 후보와 기존 직무 일치 항목을 구분해 보고합니다.
+
+## Candidate 승인·거절
+
+사용자가 Candidate를 승인하거나 거절하면 [references/candidate-review.md](references/candidate-review.md)를 읽고 다음 순서로 처리합니다.
+
+1. 연결된 Notion workspace, 프로젝트 페이지와 `config.toml`에 저장된 Roles DB가 일치하는지 확인합니다.
+2. 검토 대상 Role Name, 현재 `Status`와 page ID를 Roles DB에서 다시 조회합니다.
+3. 자연어 요청에서 대상과 `Approved` 또는 `Rejected` 결정을 명시적으로 추출합니다. 모호한 대상은 추정하지 않고 확인합니다. `Rejected` 사유가 없으면 쓰기 전에 요청합니다.
+4. Python `plan_candidate_reviews`로 전체 결정을 먼저 검증합니다. 하나라도 잘못되면 어떤 page도 변경하지 않습니다.
+5. `build_notion_role_updates`로 변경할 `Status`, `Last Reviewed`와 필요한 `Notes`를 만듭니다.
+6. 실제 Notion 쓰기 직전에 사용자에게 변경 목록을 보여주고 확인을 받습니다.
+7. 확인된 Roles DB page에만 속성을 적용합니다. 승인 메모가 비어 있으면 기존 `Notes`를 지우지 않습니다.
+8. 성공, 이미 같은 상태, 실패 항목을 구분해 보고합니다. 중간 실패 시 자동 재시도나 반대 상태로의 되돌리기를 하지 않고 Roles DB를 다시 조회합니다.
+
+Candidate 승인·거절 뒤 같은 실행에서 Trend Update를 자동 시작하지 않습니다. Trend Update는 별도 요청으로만 시작합니다.
 
 ## 승인 경계
 

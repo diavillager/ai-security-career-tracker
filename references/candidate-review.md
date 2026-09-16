@@ -1,0 +1,51 @@
+# Candidate 승인·거절
+
+이 절차는 Roles DB에 이미 저장된 `Candidate`를 사용자의 명시적 결정에 따라 `Approved` 또는 `Rejected`로 변경할 때만 사용합니다.
+
+## 자연어 요청 해석
+
+- 사용자가 번호, 정확한 Role Name 또는 앞서 보고한 후보를 가리켜 승인·거절할 수 있습니다.
+- `전부 승인`, `1번과 3번 승인`, `나머지는 거절`, `AI Agent Engineer는 승인`처럼 대상과 결정이 분명한 표현만 실행 대상으로 사용합니다.
+- 대상이나 결정이 모호하면 추정하지 않고 한 번에 한 가지 확인 질문을 합니다.
+- `Rejected`에는 검토 기록으로 남길 이유가 필요합니다. 이유가 없으면 쓰기 전에 짧은 사유를 요청합니다.
+- 같은 Role Name에 승인과 거절이 함께 지정되면 아무 항목도 변경하지 않습니다.
+
+## 실행 순서
+
+1. `config.toml`의 프로젝트 페이지와 Roles DB 식별자를 읽고 연결된 Notion workspace, 프로젝트 페이지와 Roles DB가 맞는지 확인합니다.
+2. Roles DB에서 검토 대상뿐 아니라 같은 이름으로 정규화되는 레코드를 확인할 수 있도록 `Role Name`, `Status`와 page ID를 조회합니다.
+3. 사용자 요청을 Python `ReviewDecision` 목록으로 변환합니다. 임의의 기본 결정을 넣지 않습니다.
+4. `plan_candidate_reviews`로 전체 요청을 먼저 검증합니다. 존재하지 않는 직무, 모호한 중복, 상충하는 결정 또는 확정 상태 반전이 하나라도 있으면 쓰기를 시작하지 않습니다.
+5. `build_notion_role_updates`로 각 page의 정확한 변경 속성을 만듭니다.
+6. 사용자에게 변경될 Role Name, 이전 `Status`, 새 `Status`, `Last Reviewed`와 `Notes`를 보여주고 실제 쓰기 직전 확인을 받습니다.
+7. 확인된 Roles DB의 각 page에 `Status`, `Last Reviewed`와 필요한 경우 `Notes`를 적용합니다. 승인 메모가 비어 있으면 기존 `Notes`를 지우지 않습니다.
+8. 성공한 항목, 이미 같은 상태라 변경하지 않은 항목과 실패한 항목을 구분해 보고합니다.
+
+## Notion 속성 연결
+
+| ReviewAction 값 | Roles DB 속성 |
+| --- | --- |
+| `target_status` | `Status`의 `Approved` 또는 `Rejected` |
+| `reviewed_on` | `Last Reviewed` |
+| 비어 있지 않은 `note` | `Notes` |
+
+`First Discovered`, `Evidence Sources`, `Experience Level`과 다른 직무 정보는 Candidate 승인·거절 과정에서 변경하지 않습니다.
+
+## 쓰기 실패 처리
+
+Notion에는 여러 page를 하나의 거래처럼 한 번에 되돌리는 기능을 전제로 하지 않습니다. Python `apply_candidate_review_plan`은 모든 변경을 먼저 검증한 뒤 순서대로 적용합니다.
+
+- 중간 쓰기가 실패하면 자동 재시도하거나 이전 성공 항목을 반대로 변경하지 않습니다.
+- `CandidateReviewApplyError`의 `applied_record_ids`와 `failed_record_id`를 사용해 이미 적용된 항목과 실패 지점을 정확히 보고합니다.
+- 실패 뒤에는 Roles DB를 다시 조회한 다음 남은 항목에 대한 새 계획을 만들어야 합니다.
+- 승인 직후 같은 실행에서 Trend Update를 자동 시작하지 않습니다.
+
+## 결과 보고
+
+다음 내용을 짧게 보고합니다.
+
+- 적용된 `Approved`와 `Rejected` Role Name
+- 이미 요청한 상태여서 변경하지 않은 Role Name
+- 적용한 `Last Reviewed` 날짜
+- 실패가 있으면 성공한 page와 실패한 page
+- Trend Update는 별도 요청이 필요하다는 안내
