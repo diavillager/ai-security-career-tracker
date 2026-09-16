@@ -7,3 +7,4 @@ config.toml
 dist/
 build/
 *.egg-info/
+artifacts/

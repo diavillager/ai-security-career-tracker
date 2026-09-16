@@ -16,13 +16,19 @@ from ai_security_career_tracker.role_discovery import (
     Category,
     DiscoveryValidationError,
     EvidenceType,
+    EvidenceReviewFlag,
     ExclusionReason,
     EvidenceSource,
     ExistingRole,
     ExistingRoleMatch,
     ExperienceLevel,
     PREFERRED_JOB_SOURCES,
+    ROLE_EVIDENCE_REVIEWER,
+    ReviewAssessment,
+    ReviewFlagType,
+    ReviewedRole,
     RoleObservation,
+    RoleEvidenceReviewResult,
     RoleStatus,
     RESPONSIBILITY_TERMS,
     SEEDS,
@@ -33,7 +39,9 @@ from ai_security_career_tracker.role_discovery import (
     default_period,
     normalize_role_name,
     parse_agent_discovery_result,
+    parse_role_evidence_review_result,
     select_new_candidates,
+    validate_role_evidence_review,
 )
 
 
@@ -204,6 +212,100 @@ class RoleDiscoveryTests(unittest.TestCase):
     def test_agent_payload_rejects_non_json_explanation(self) -> None:
         with self.assertRaises(DiscoveryValidationError):
             parse_agent_discovery_result("조사 결과입니다: {\"run_id\": \"run-1\"}")
+
+    def test_evidence_review_payload_is_parsed_and_covers_every_role(self) -> None:
+        results = (
+            agent_result(
+                Category.AI,
+                observations=(observation("AI Agent Engineer", Category.AI),),
+            ),
+            agent_result(Category.SECURITY),
+            agent_result(Category.AI_SECURITY),
+        )
+        payload = {
+            "run_id": "run-1",
+            "agent_name": ROLE_EVIDENCE_REVIEWER,
+            "reviewed_roles": [
+                {
+                    "role_name": "AI Agent Engineer",
+                    "assessment": "flagged",
+                    "flags": [
+                        {
+                            "type": "source_independence",
+                            "summary": "두 URL이 같은 채용 공고의 복제본입니다.",
+                            "urls": [
+                                "https://careers.example/roles/agent-security",
+                                "https://engineering.example/agent-security-context",
+                            ],
+                        }
+                    ],
+                }
+            ],
+            "blockers": [],
+        }
+
+        review = parse_role_evidence_review_result(
+            json.dumps(payload, ensure_ascii=False)
+        )
+        validated = validate_role_evidence_review(review, results, "run-1")
+
+        self.assertEqual(validated.agent_name, ROLE_EVIDENCE_REVIEWER)
+        self.assertEqual(
+            validated.reviewed_roles[0].assessment,
+            ReviewAssessment.FLAGGED,
+        )
+        self.assertEqual(
+            validated.reviewed_roles[0].flags[0].flag_type,
+            ReviewFlagType.SOURCE_INDEPENDENCE,
+        )
+
+    def test_evidence_review_must_cover_every_observed_role(self) -> None:
+        results = (
+            agent_result(
+                Category.AI,
+                observations=(observation("AI Agent Engineer", Category.AI),),
+            ),
+            agent_result(Category.SECURITY),
+            agent_result(Category.AI_SECURITY),
+        )
+        review = RoleEvidenceReviewResult(
+            run_id="run-1",
+            agent_name=ROLE_EVIDENCE_REVIEWER,
+            reviewed_roles=(),
+        )
+
+        with self.assertRaises(DiscoveryValidationError):
+            validate_role_evidence_review(review, results, "run-1")
+
+    def test_evidence_review_blocker_stops_validation(self) -> None:
+        results = (
+            agent_result(Category.AI),
+            agent_result(Category.SECURITY),
+            agent_result(Category.AI_SECURITY),
+        )
+        review = RoleEvidenceReviewResult(
+            run_id="run-1",
+            agent_name=ROLE_EVIDENCE_REVIEWER,
+            reviewed_roles=(),
+            blockers=("원문 접근 실패",),
+        )
+
+        with self.assertRaises(DiscoveryValidationError):
+            validate_role_evidence_review(review, results, "run-1")
+
+    def test_clear_evidence_review_cannot_contain_flags(self) -> None:
+        with self.assertRaises(DiscoveryValidationError):
+            ReviewedRole(
+                role_name="AI Agent Engineer",
+                assessment=ReviewAssessment.CLEAR,
+                flags=(
+                    EvidenceReviewFlag(
+                        flag_type=ReviewFlagType.UNSUPPORTED_CLAIM,
+                        summary="설명에 원문으로 확인되지 않는 주장이 있습니다.",
+                        urls=("https://careers.example/roles/agent-security",),
+                    ),
+                ),
+            )
 
     def test_agent_existing_match_must_agree_with_parent_snapshot(self) -> None:
         results = (

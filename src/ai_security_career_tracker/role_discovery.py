@@ -48,7 +48,22 @@ class ExclusionReason(StrEnum):
     OTHER = "other"
 
 
+class ReviewAssessment(StrEnum):
+    CLEAR = "clear"
+    FLAGGED = "flagged"
+
+
+class ReviewFlagType(StrEnum):
+    SOURCE_ACCESS_FAILURE = "source_access_failure"
+    SOURCE_INDEPENDENCE = "source_independence"
+    EVIDENCE_CONFLICT = "evidence_conflict"
+    CATEGORY_AMBIGUITY = "category_ambiguity"
+    SEMANTIC_DUPLICATE = "semantic_duplicate"
+    UNSUPPORTED_CLAIM = "unsupported_claim"
+
+
 SOUTH_KOREA_JOB_MARKET = "South Korea"
+ROLE_EVIDENCE_REVIEWER = "role_evidence_reviewer"
 PREFERRED_JOB_SOURCES = (
     "Employer career pages",
     "Saramin",
@@ -225,6 +240,54 @@ class AgentDiscoveryResult:
         if self.sources_checked < 0:
             raise DiscoveryValidationError(
                 "Agent source count must not be negative."
+            )
+
+
+@dataclass(frozen=True)
+class EvidenceReviewFlag:
+    flag_type: ReviewFlagType
+    summary: str
+    urls: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if not self.summary.strip():
+            raise DiscoveryValidationError("Every review flag needs a summary.")
+        if not self.urls:
+            raise DiscoveryValidationError("Every review flag needs at least one URL.")
+        for url in self.urls:
+            parsed = urlsplit(url)
+            if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+                raise DiscoveryValidationError(
+                    "Every review flag URL must use HTTP or HTTPS."
+                )
+
+
+@dataclass(frozen=True)
+class ReviewedRole:
+    role_name: str
+    assessment: ReviewAssessment
+    flags: tuple[EvidenceReviewFlag, ...]
+
+    def __post_init__(self) -> None:
+        if not self.role_name.strip():
+            raise DiscoveryValidationError("Reviewed role name must not be blank.")
+        if self.assessment is ReviewAssessment.CLEAR and self.flags:
+            raise DiscoveryValidationError("A clear review must not contain flags.")
+        if self.assessment is ReviewAssessment.FLAGGED and not self.flags:
+            raise DiscoveryValidationError("A flagged review needs at least one flag.")
+
+
+@dataclass(frozen=True)
+class RoleEvidenceReviewResult:
+    run_id: str
+    agent_name: str
+    reviewed_roles: tuple[ReviewedRole, ...]
+    blockers: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not self.run_id.strip() or not self.agent_name.strip():
+            raise DiscoveryValidationError(
+                "Every evidence review needs a run ID and an agent name."
             )
 
 
@@ -648,6 +711,114 @@ def parse_agent_discovery_result(
         raise DiscoveryValidationError(
             f"Invalid agent discovery result: {exc}"
         ) from exc
+
+
+def parse_role_evidence_review_result(
+    payload: Mapping[str, object] | str,
+) -> RoleEvidenceReviewResult:
+    """Parse the semantic reviewer's JSON response into validated objects."""
+    try:
+        if isinstance(payload, str):
+            decoded = json.loads(payload)
+            payload = _mapping(decoded, "evidence review result")
+
+        reviewed_roles: list[ReviewedRole] = []
+        for role_index, raw_role in enumerate(
+            _list(payload.get("reviewed_roles"), "reviewed_roles")
+        ):
+            role = _mapping(raw_role, f"reviewed_roles[{role_index}]")
+            flags: list[EvidenceReviewFlag] = []
+            for flag_index, raw_flag in enumerate(
+                _list(role.get("flags"), "flags")
+            ):
+                flag = _mapping(
+                    raw_flag,
+                    f"reviewed_roles[{role_index}].flags[{flag_index}]",
+                )
+                flags.append(
+                    EvidenceReviewFlag(
+                        flag_type=ReviewFlagType(
+                            _string(flag.get("type"), "review flag type")
+                        ),
+                        summary=_string(
+                            flag.get("summary"), "review flag summary"
+                        ),
+                        urls=tuple(
+                            _string(url, "review flag URL")
+                            for url in _list(flag.get("urls"), "review flag URLs")
+                        ),
+                    )
+                )
+            reviewed_roles.append(
+                ReviewedRole(
+                    role_name=_string(role.get("role_name"), "reviewed role name"),
+                    assessment=ReviewAssessment(
+                        _string(role.get("assessment"), "review assessment")
+                    ),
+                    flags=tuple(flags),
+                )
+            )
+
+        return RoleEvidenceReviewResult(
+            run_id=_string(payload.get("run_id"), "run_id"),
+            agent_name=_string(payload.get("agent_name"), "agent_name"),
+            reviewed_roles=tuple(reviewed_roles),
+            blockers=tuple(
+                _string(value, "blockers item")
+                for value in _list(payload.get("blockers"), "blockers")
+            ),
+        )
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        if isinstance(exc, DiscoveryValidationError):
+            raise
+        raise DiscoveryValidationError(
+            f"Invalid role evidence review result: {exc}"
+        ) from exc
+
+
+def validate_role_evidence_review(
+    review: RoleEvidenceReviewResult,
+    results: tuple[AgentDiscoveryResult, ...],
+    run_id: str,
+) -> RoleEvidenceReviewResult:
+    """Require one semantic review for every normalized observed role."""
+    if not run_id.strip() or review.run_id != run_id:
+        raise DiscoveryValidationError(
+            "The evidence review must use the parent workflow run ID."
+        )
+    if review.agent_name != ROLE_EVIDENCE_REVIEWER:
+        raise DiscoveryValidationError(
+            f"Unexpected evidence reviewer: {review.agent_name}"
+        )
+    if review.blockers:
+        raise DiscoveryValidationError("The evidence review contains blockers.")
+    if len(results) != len(ROLE_DISCOVERY_AGENT_BY_CATEGORY):
+        raise DiscoveryValidationError(
+            "Evidence review requires all three domain-agent results."
+        )
+    if any(result.run_id != run_id or result.blockers for result in results):
+        raise DiscoveryValidationError(
+            "Evidence review cannot validate incomplete or blocked agent results."
+        )
+
+    expected_roles = {
+        normalize_role_name(observation.role_name)
+        for result in results
+        for observation in result.observations
+    }
+    reviewed_names = [
+        normalize_role_name(reviewed.role_name)
+        for reviewed in review.reviewed_roles
+    ]
+    if len(reviewed_names) != len(set(reviewed_names)):
+        raise DiscoveryValidationError(
+            "The evidence review contains a duplicate reviewed role."
+        )
+    if set(reviewed_names) != expected_roles:
+        raise DiscoveryValidationError(
+            "The evidence review must cover every observed role exactly once."
+        )
+    return review
 
 
 def consolidate_agent_results(
