@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import unicodedata
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date, timedelta
 from enum import StrEnum
@@ -35,6 +37,15 @@ class ExperienceLevel(StrEnum):
 class EvidenceType(StrEnum):
     JOB_POSTING = "Job Posting"
     INFORMATIONAL = "Informational"
+
+
+class ExclusionReason(StrEnum):
+    OVERSEAS = "overseas"
+    UNCLEAR_LOCATION = "unclear_location"
+    MISSING_PUBLISHED_DATE = "missing_published_date"
+    OUTSIDE_PERIOD = "outside_period"
+    DOMAIN_MISMATCH = "domain_mismatch"
+    OTHER = "other"
 
 
 SOUTH_KOREA_JOB_MARKET = "South Korea"
@@ -73,6 +84,12 @@ class SearchQuery:
     period: DateRange
     job_market: str = SOUTH_KOREA_JOB_MARKET
     preferred_sources: tuple[str, ...] = PREFERRED_JOB_SOURCES
+
+
+@dataclass(frozen=True)
+class AgentSearchTask:
+    agent_name: str
+    search_query: SearchQuery
 
 
 @dataclass(frozen=True)
@@ -171,9 +188,52 @@ class ExistingRoleMatch:
 
 
 @dataclass(frozen=True)
+class AgentExclusion:
+    url: str
+    reason: ExclusionReason
+
+    def __post_init__(self) -> None:
+        parsed = urlsplit(self.url)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            raise DiscoveryValidationError(
+                "Every agent exclusion needs an original HTTP or HTTPS URL."
+            )
+
+
+@dataclass(frozen=True)
+class AgentDiscoveryResult:
+    run_id: str
+    agent_name: str
+    category: Category
+    search_period: DateRange
+    job_market: str
+    sources_checked: int
+    observations: tuple[RoleObservation, ...]
+    exclusions: tuple[AgentExclusion, ...] = ()
+    existing_matches: tuple[ExistingRoleMatch, ...] = ()
+    blockers: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not self.run_id.strip() or not self.agent_name.strip():
+            raise DiscoveryValidationError(
+                "Every agent result needs a run ID and an agent name."
+            )
+        if self.job_market != SOUTH_KOREA_JOB_MARKET:
+            raise DiscoveryValidationError(
+                "Every agent result must use the South Korea job market."
+            )
+        if self.sources_checked < 0:
+            raise DiscoveryValidationError(
+                "Agent source count must not be negative."
+            )
+
+
+@dataclass(frozen=True)
 class DiscoveryOutcome:
     new_candidates: tuple[CandidateRole, ...]
     existing_matches: tuple[ExistingRoleMatch, ...]
+    sources_checked: int = 0
+    exclusions: tuple[AgentExclusion, ...] = ()
 
 
 SEEDS: dict[Category, tuple[str, ...]] = {
@@ -237,6 +297,12 @@ RESPONSIBILITY_TERMS: dict[Category, tuple[str, ...]] = {
     ),
 }
 
+ROLE_DISCOVERY_AGENT_BY_CATEGORY: dict[Category, str] = {
+    Category.AI: "ai_role_researcher",
+    Category.SECURITY: "security_role_researcher",
+    Category.AI_SECURITY: "ai_security_role_researcher",
+}
+
 
 def default_period(as_of: date, days: int = 7) -> DateRange:
     """Return an inclusive calendar range ending on ``as_of``."""
@@ -268,6 +334,17 @@ def build_search_plan(period: DateRange) -> tuple[SearchQuery, ...]:
             )
         )
     return tuple(queries)
+
+
+def build_agent_search_tasks(period: DateRange) -> tuple[AgentSearchTask, ...]:
+    """Assign each deterministic domain query to its dedicated research agent."""
+    return tuple(
+        AgentSearchTask(
+            agent_name=ROLE_DISCOVERY_AGENT_BY_CATEGORY[query.category],
+            search_query=query,
+        )
+        for query in build_search_plan(period)
+    )
 
 
 def normalize_role_name(role_name: str) -> str:
@@ -399,4 +476,287 @@ def select_new_candidates(
     return DiscoveryOutcome(
         new_candidates=tuple(candidates),
         existing_matches=tuple(existing_matches),
+    )
+
+
+def _mapping(value: object, field: str) -> Mapping[str, object]:
+    if not isinstance(value, Mapping):
+        raise DiscoveryValidationError(f"{field} must be an object.")
+    return value
+
+
+def _string(value: object, field: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise DiscoveryValidationError(f"{field} must be a non-empty string.")
+    return value.strip()
+
+
+def _list(value: object, field: str) -> list[object]:
+    if not isinstance(value, list):
+        raise DiscoveryValidationError(f"{field} must be a list.")
+    return value
+
+
+def _date(value: object, field: str) -> date:
+    try:
+        return date.fromisoformat(_string(value, field))
+    except ValueError as exc:
+        raise DiscoveryValidationError(
+            f"{field} must be an ISO date in YYYY-MM-DD format."
+        ) from exc
+
+
+def parse_agent_discovery_result(
+    payload: Mapping[str, object] | str,
+) -> AgentDiscoveryResult:
+    """Parse a subagent's structured output into deterministic domain objects."""
+    try:
+        if isinstance(payload, str):
+            decoded = json.loads(payload)
+            payload = _mapping(decoded, "agent result")
+        period_data = _mapping(payload.get("search_period"), "search_period")
+        observations: list[RoleObservation] = []
+        for index, raw_observation in enumerate(
+            _list(payload.get("observations"), "observations")
+        ):
+            item = _mapping(raw_observation, f"observations[{index}]")
+            evidence: list[EvidenceSource] = []
+            for source_index, raw_source in enumerate(
+                _list(item.get("evidence_sources"), "evidence_sources")
+            ):
+                source = _mapping(
+                    raw_source,
+                    f"observations[{index}].evidence_sources[{source_index}]",
+                )
+                source_type = EvidenceType(
+                    _string(source.get("source_type"), "source_type")
+                )
+                evidence.append(
+                    EvidenceSource(
+                        name=_string(source.get("name"), "source name"),
+                        url=_string(source.get("url"), "source URL"),
+                        published_on=_date(
+                            source.get("published_on"), "published_on"
+                        ),
+                        source_type=source_type,
+                        job_location=(
+                            _string(source.get("job_location"), "job_location")
+                            if source.get("job_location") is not None
+                            else None
+                        ),
+                        job_market=(
+                            _string(source.get("job_market"), "source job_market")
+                            if source.get("job_market") is not None
+                            else None
+                        ),
+                    )
+                )
+            observations.append(
+                RoleObservation(
+                    role_name=_string(item.get("role_name"), "role_name"),
+                    suggested_category=Category(
+                        _string(item.get("suggested_category"), "suggested_category")
+                    ),
+                    description=_string(item.get("description"), "description"),
+                    key_responsibilities=tuple(
+                        _string(value, "key_responsibilities item")
+                        for value in _list(
+                            item.get("key_responsibilities"),
+                            "key_responsibilities",
+                        )
+                    ),
+                    required_skills=tuple(
+                        _string(value, "required_skills item")
+                        for value in _list(
+                            item.get("required_skills"), "required_skills"
+                        )
+                    ),
+                    team_description=_string(
+                        item.get("team_description"), "team_description"
+                    ),
+                    product_context=_string(
+                        item.get("product_context"), "product_context"
+                    ),
+                    discovery_reason=_string(
+                        item.get("discovery_reason"), "discovery_reason"
+                    ),
+                    experience_level=ExperienceLevel(
+                        _string(item.get("experience_level"), "experience_level")
+                    ),
+                    evidence_sources=tuple(evidence),
+                )
+            )
+
+        exclusions = tuple(
+            AgentExclusion(
+                url=_string(
+                    _mapping(item, "exclusion").get("url"), "exclusion URL"
+                ),
+                reason=ExclusionReason(
+                    _string(
+                        _mapping(item, "exclusion").get("reason"),
+                        "exclusion reason",
+                    )
+                ),
+            )
+            for item in _list(payload.get("exclusions"), "exclusions")
+        )
+        existing_matches = tuple(
+            ExistingRoleMatch(
+                observed_role_name=_string(
+                    _mapping(item, "existing match").get("observed_role_name"),
+                    "observed_role_name",
+                ),
+                existing_role_name=_string(
+                    _mapping(item, "existing match").get("existing_role_name"),
+                    "existing_role_name",
+                ),
+                existing_status=RoleStatus(
+                    _string(
+                        _mapping(item, "existing match").get("existing_status"),
+                        "existing_status",
+                    )
+                ),
+            )
+            for item in _list(payload.get("existing_matches"), "existing_matches")
+        )
+        sources_checked = payload.get("sources_checked")
+        if isinstance(sources_checked, bool) or not isinstance(sources_checked, int):
+            raise DiscoveryValidationError("sources_checked must be an integer.")
+
+        return AgentDiscoveryResult(
+            run_id=_string(payload.get("run_id"), "run_id"),
+            agent_name=_string(payload.get("agent_name"), "agent_name"),
+            category=Category(_string(payload.get("category"), "category")),
+            search_period=DateRange(
+                start=_date(period_data.get("start"), "search_period.start"),
+                end=_date(period_data.get("end"), "search_period.end"),
+            ),
+            job_market=_string(payload.get("job_market"), "job_market"),
+            sources_checked=sources_checked,
+            observations=tuple(observations),
+            exclusions=exclusions,
+            existing_matches=existing_matches,
+            blockers=tuple(
+                _string(value, "blockers item")
+                for value in _list(payload.get("blockers"), "blockers")
+            ),
+        )
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        if isinstance(exc, DiscoveryValidationError):
+            raise
+        raise DiscoveryValidationError(
+            f"Invalid agent discovery result: {exc}"
+        ) from exc
+
+
+def consolidate_agent_results(
+    results: tuple[AgentDiscoveryResult, ...],
+    run_id: str,
+    existing_roles: tuple[ExistingRole, ...],
+    discovered_on: date,
+    search_period: DateRange,
+) -> DiscoveryOutcome:
+    """Validate a complete three-agent run before candidate selection."""
+    if not run_id.strip():
+        raise DiscoveryValidationError("Run ID must not be blank.")
+    if len(results) != len(ROLE_DISCOVERY_AGENT_BY_CATEGORY):
+        raise DiscoveryValidationError(
+            "Role Discovery requires exactly one result from each domain agent."
+        )
+
+    by_category: dict[Category, AgentDiscoveryResult] = {}
+    for result in results:
+        if result.run_id != run_id:
+            raise DiscoveryValidationError(
+                "Agent results from different Role Discovery runs cannot be combined."
+            )
+        if result.search_period != search_period:
+            raise DiscoveryValidationError(
+                "Agent results must use the parent workflow search period."
+            )
+        if result.job_market != SOUTH_KOREA_JOB_MARKET:
+            raise DiscoveryValidationError(
+                "Agent results must use the South Korea job market."
+            )
+        if result.category in by_category:
+            raise DiscoveryValidationError(
+                f"Duplicate agent result for category: {result.category.value}"
+            )
+        expected_agent = ROLE_DISCOVERY_AGENT_BY_CATEGORY[result.category]
+        if result.agent_name != expected_agent:
+            raise DiscoveryValidationError(
+                f"Unexpected agent for category {result.category.value}: "
+                f"{result.agent_name}"
+            )
+        if result.blockers:
+            raise DiscoveryValidationError(
+                f"Agent result has blockers: {result.agent_name}"
+            )
+        if any(
+            observation.suggested_category is not result.category
+            for observation in result.observations
+        ):
+            raise DiscoveryValidationError(
+                f"Agent result contains an observation outside its category: "
+                f"{result.agent_name}"
+            )
+        by_category[result.category] = result
+
+    if set(by_category) != set(ROLE_DISCOVERY_AGENT_BY_CATEGORY):
+        raise DiscoveryValidationError(
+            "Role Discovery is incomplete because a domain result is missing."
+        )
+
+    observations = tuple(
+        observation
+        for category in Category
+        for observation in by_category[category].observations
+    )
+    validated = select_new_candidates(
+        observations=observations,
+        existing_roles=existing_roles,
+        discovered_on=discovered_on,
+        search_period=search_period,
+    )
+    agent_matches = tuple(
+        match
+        for category in Category
+        for match in by_category[category].existing_matches
+    )
+    existing_by_name = {
+        normalize_role_name(role.role_name): role for role in existing_roles
+    }
+    for match in agent_matches:
+        normalized_observed = normalize_role_name(match.observed_role_name)
+        normalized_existing = normalize_role_name(match.existing_role_name)
+        existing = existing_by_name.get(normalized_existing)
+        if (
+            normalized_observed != normalized_existing
+            or existing is None
+            or existing.status is not match.existing_status
+        ):
+            raise DiscoveryValidationError(
+                "Agent existing-role matches must agree with the parent snapshot."
+            )
+    unique_matches: dict[
+        tuple[str, str, RoleStatus], ExistingRoleMatch
+    ] = {}
+    for match in (*validated.existing_matches, *agent_matches):
+        key = (
+            normalize_role_name(match.observed_role_name),
+            normalize_role_name(match.existing_role_name),
+            match.existing_status,
+        )
+        unique_matches.setdefault(key, match)
+
+    return DiscoveryOutcome(
+        new_candidates=validated.new_candidates,
+        existing_matches=tuple(unique_matches.values()),
+        sources_checked=sum(result.sources_checked for result in results),
+        exclusions=tuple(
+            exclusion
+            for category in Category
+            for exclusion in by_category[category].exclusions
+        ),
     )

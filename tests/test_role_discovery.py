@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sys
 import unittest
 from datetime import date
@@ -10,11 +11,15 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from ai_security_career_tracker.role_discovery import (
+    AgentDiscoveryResult,
+    AgentExclusion,
     Category,
     DiscoveryValidationError,
     EvidenceType,
+    ExclusionReason,
     EvidenceSource,
     ExistingRole,
+    ExistingRoleMatch,
     ExperienceLevel,
     PREFERRED_JOB_SOURCES,
     RoleObservation,
@@ -22,9 +27,12 @@ from ai_security_career_tracker.role_discovery import (
     RESPONSIBILITY_TERMS,
     SEEDS,
     SOUTH_KOREA_JOB_MARKET,
+    build_agent_search_tasks,
     build_search_plan,
+    consolidate_agent_results,
     default_period,
     normalize_role_name,
+    parse_agent_discovery_result,
     select_new_candidates,
 )
 
@@ -68,6 +76,35 @@ def observation(
     )
 
 
+def agent_result(
+    category: Category,
+    *,
+    run_id: str = "run-1",
+    observations: tuple[RoleObservation, ...] = (),
+    blockers: tuple[str, ...] = (),
+    sources_checked: int = 0,
+    exclusions: tuple[AgentExclusion, ...] = (),
+    existing_matches: tuple[ExistingRoleMatch, ...] = (),
+) -> AgentDiscoveryResult:
+    agent_names = {
+        Category.AI: "ai_role_researcher",
+        Category.SECURITY: "security_role_researcher",
+        Category.AI_SECURITY: "ai_security_role_researcher",
+    }
+    return AgentDiscoveryResult(
+        run_id=run_id,
+        agent_name=agent_names[category],
+        category=category,
+        search_period=default_period(date(2026, 9, 15)),
+        job_market=SOUTH_KOREA_JOB_MARKET,
+        sources_checked=sources_checked,
+        observations=observations,
+        exclusions=exclusions,
+        existing_matches=existing_matches,
+        blockers=blockers,
+    )
+
+
 class RoleDiscoveryTests(unittest.TestCase):
     def test_default_period_is_seven_inclusive_days(self) -> None:
         period = default_period(date(2026, 9, 15))
@@ -81,6 +118,190 @@ class RoleDiscoveryTests(unittest.TestCase):
         self.assertEqual({query.category for query in plan}, set(Category))
         self.assertTrue(all(query.job_market == SOUTH_KOREA_JOB_MARKET for query in plan))
         self.assertTrue(all("채용" in query.query and "한국" in query.query for query in plan))
+
+    def test_each_domain_is_assigned_to_a_dedicated_agent(self) -> None:
+        tasks = build_agent_search_tasks(default_period(date(2026, 9, 15)))
+
+        self.assertEqual(
+            {
+                task.search_query.category: task.agent_name
+                for task in tasks
+            },
+            {
+                Category.AI: "ai_role_researcher",
+                Category.SECURITY: "security_role_researcher",
+                Category.AI_SECURITY: "ai_security_role_researcher",
+            },
+        )
+        self.assertEqual(len({task.agent_name for task in tasks}), 3)
+
+    def test_complete_agent_run_is_consolidated_before_candidate_selection(self) -> None:
+        results = (
+            agent_result(
+                Category.AI,
+                sources_checked=2,
+                exclusions=(
+                    AgentExclusion(
+                        "https://careers.example/overseas",
+                        ExclusionReason.OVERSEAS,
+                    ),
+                ),
+            ),
+            agent_result(Category.SECURITY, sources_checked=3),
+            agent_result(
+                Category.AI_SECURITY,
+                observations=(observation(),),
+                sources_checked=2,
+                existing_matches=(
+                    ExistingRoleMatch(
+                        "Existing Security Engineer",
+                        "existing security engineer",
+                        RoleStatus.APPROVED,
+                    ),
+                ),
+            ),
+        )
+
+        outcome = consolidate_agent_results(
+            results,
+            "run-1",
+            (
+                ExistingRole(
+                    "existing security engineer",
+                    RoleStatus.APPROVED,
+                ),
+            ),
+            date(2026, 9, 15),
+            default_period(date(2026, 9, 15)),
+        )
+
+        self.assertEqual(len(outcome.new_candidates), 1)
+        self.assertEqual(outcome.new_candidates[0].category, Category.AI_SECURITY)
+        self.assertEqual(outcome.sources_checked, 7)
+        self.assertEqual(len(outcome.exclusions), 1)
+        self.assertEqual(len(outcome.existing_matches), 1)
+
+    def test_structured_agent_payload_is_parsed_before_consolidation(self) -> None:
+        payload = {
+            "run_id": "run-1",
+            "agent_name": "ai_role_researcher",
+            "category": "AI",
+            "search_period": {"start": "2026-09-09", "end": "2026-09-15"},
+            "job_market": "South Korea",
+            "sources_checked": 0,
+            "observations": [],
+            "exclusions": [],
+            "existing_matches": [],
+            "blockers": [],
+        }
+
+        result = parse_agent_discovery_result(json.dumps(payload, ensure_ascii=False))
+
+        self.assertEqual(result.agent_name, "ai_role_researcher")
+        self.assertEqual(result.category, Category.AI)
+        self.assertEqual(result.search_period, default_period(date(2026, 9, 15)))
+
+    def test_agent_payload_rejects_non_json_explanation(self) -> None:
+        with self.assertRaises(DiscoveryValidationError):
+            parse_agent_discovery_result("조사 결과입니다: {\"run_id\": \"run-1\"}")
+
+    def test_agent_existing_match_must_agree_with_parent_snapshot(self) -> None:
+        results = (
+            agent_result(
+                Category.AI,
+                existing_matches=(
+                    ExistingRoleMatch(
+                        "Invented Role",
+                        "Invented Role",
+                        RoleStatus.APPROVED,
+                    ),
+                ),
+            ),
+            agent_result(Category.SECURITY),
+            agent_result(Category.AI_SECURITY),
+        )
+
+        with self.assertRaises(DiscoveryValidationError):
+            consolidate_agent_results(
+                results,
+                "run-1",
+                (),
+                date(2026, 9, 15),
+                default_period(date(2026, 9, 15)),
+            )
+
+    def test_incomplete_agent_run_is_rejected(self) -> None:
+        results = (
+            agent_result(Category.AI),
+            agent_result(Category.SECURITY),
+        )
+
+        with self.assertRaises(DiscoveryValidationError):
+            consolidate_agent_results(
+                results,
+                "run-1",
+                (),
+                date(2026, 9, 15),
+                default_period(date(2026, 9, 15)),
+            )
+
+    def test_results_from_different_runs_are_rejected(self) -> None:
+        results = (
+            agent_result(Category.AI),
+            agent_result(Category.SECURITY, run_id="run-2"),
+            agent_result(Category.AI_SECURITY),
+        )
+
+        with self.assertRaises(DiscoveryValidationError):
+            consolidate_agent_results(
+                results,
+                "run-1",
+                (),
+                date(2026, 9, 15),
+                default_period(date(2026, 9, 15)),
+            )
+
+    def test_agent_result_from_different_period_is_rejected(self) -> None:
+        ai_result = agent_result(Category.AI)
+        wrong_period_result = AgentDiscoveryResult(
+            run_id="run-1",
+            agent_name="security_role_researcher",
+            category=Category.SECURITY,
+            search_period=default_period(date(2026, 9, 14)),
+            job_market=SOUTH_KOREA_JOB_MARKET,
+            sources_checked=0,
+            observations=(),
+        )
+        results = (
+            ai_result,
+            wrong_period_result,
+            agent_result(Category.AI_SECURITY),
+        )
+
+        with self.assertRaises(DiscoveryValidationError):
+            consolidate_agent_results(
+                results,
+                "run-1",
+                (),
+                date(2026, 9, 15),
+                default_period(date(2026, 9, 15)),
+            )
+
+    def test_agent_blocker_prevents_partial_candidate_selection(self) -> None:
+        results = (
+            agent_result(Category.AI),
+            agent_result(Category.SECURITY, blockers=("웹 검색 실패",)),
+            agent_result(Category.AI_SECURITY),
+        )
+
+        with self.assertRaises(DiscoveryValidationError):
+            consolidate_agent_results(
+                results,
+                "run-1",
+                (),
+                date(2026, 9, 15),
+                default_period(date(2026, 9, 15)),
+            )
 
     def test_search_plan_prioritizes_official_and_domestic_sources_without_allowlisting(self) -> None:
         plan = build_search_plan(default_period(date(2026, 9, 15)))

@@ -19,6 +19,12 @@ seed 이름은 검색을 시작하는 데 사용하지만 검색 범위를 제�
 
 agent, tool use, RAG, evaluation, model serving, orchestration, observability, IAM, authorization, OAuth, OIDC, sandbox, threat modeling, workload identity, policy enforcement, audit logging, data governance, Zero Trust 같은 책임 관련 검색어로 검색 범위를 넓힙니다.
 
+## 영역별 Agent 위임
+
+부모 workflow는 [role-discovery-agent-contract.md](role-discovery-agent-contract.md)에 따라 AI는 `ai_role_researcher`, Security는 `security_role_researcher`, AI × Security는 `ai_security_role_researcher`에 동시에 위임합니다. 세 Agent는 같은 `run_id`, 검색 기간, 대한민국 채용시장, 기존 Roles DB snapshot을 사용합니다.
+
+각 Agent는 할당된 영역의 조사와 원본 근거 정리만 담당합니다. 세 영역 결과가 모두 성공한 뒤 부모 workflow가 URL 중복을 제거하고 기존 Python 검증으로 Candidate 요건을 판정합니다. 영역 하나가 실패하거나 누락되면 나머지 결과만으로 전체 조사가 끝났다고 보고하거나 Candidate를 저장하지 않습니다. 같은 Role Name이 서로 다른 Category로 반환되면 자동 선택하지 않고 검토가 필요한 충돌로 처리합니다.
+
 ## 근거와 분류
 
 채용 근거는 기업 공식 채용 페이지와 Saramin, JobKorea, Wanted, Jumpit 같은 국내 채용 플랫폼을 우선합니다. 이 목록을 완전한 허용 목록으로 사용하지 않습니다. 다른 국내외 채용 사이트도 공고 자체에서 대한민국 근무지를 명확히 확인할 수 있으면 사용할 수 있으며, 가능하면 기업의 원본 채용 공고와 함께 검증합니다. 글로벌 채용 집계 사이트를 최초 검색 대상으로 사용하거나 확인 가능한 기업 원본 공고 대신 단독으로 의존하지 않습니다.

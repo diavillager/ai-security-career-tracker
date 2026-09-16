@@ -48,10 +48,21 @@ MVP 기본 구조, Notion 데이터베이스 설정, Role Discovery까지 구현
 
 ## Role Discovery
 
-검색 계획, 근거 요건, Notion 필드 연결, 결과 보고 기준은 [references/role-discovery.md](references/role-discovery.md)를 읽습니다.
+검색 계획, 근거 요건, Notion 필드 연결, 결과 보고 기준은 [references/role-discovery.md](references/role-discovery.md)를 읽습니다. 영역별 Agent의 입력과 출력은 [references/role-discovery-agent-contract.md](references/role-discovery-agent-contract.md)를 읽습니다.
+
+부모 workflow가 Role Discovery를 조정합니다.
+
+1. 실행 시작 시 `run_id`, 검색 기간, 기존 Roles DB의 모든 Role Name과 Status를 한 번 확정합니다.
+2. Python `build_agent_search_tasks`로 AI, Security, AI × Security의 검색 작업을 만듭니다.
+3. `ai_role_researcher`, `security_role_researcher`, `ai_security_role_researcher`에 해당 영역 작업과 같은 `run_id`, 기간, 기존 직무 snapshot을 전달해 병렬로 시작합니다.
+4. 세 Agent가 모두 끝날 때까지 기다립니다. 누락, 실패, `blockers`, 다른 `run_id`가 있으면 부분 결과를 저장하거나 완료로 보고하지 않습니다.
+5. 각 구조화된 결과를 `parse_agent_discovery_result`로 변환한 뒤 `consolidate_agent_results`로 병합하고 검증합니다. Agent가 제안한 내용을 그대로 Candidate로 확정하지 않습니다.
+6. 검증된 Candidate만 사용자에게 보고하며 승인 전에는 Status를 바꾸거나 Trend Update를 시작하지 않습니다.
+
+세 Agent는 할당된 영역의 검색어 확장, 검색 순서, 추가 원문 확인만 자율적으로 판단합니다. 검색 기간, 대한민국 근무지, 출처 조건, 중복 기준, Candidate 판정, Notion 쓰기는 변경하지 못합니다.
 
 - 요청에 기간이 없으면 오늘을 마지막 날로 하는 최근 7일을 사용합니다.
-- 검색 전에 모든 기존 Role Name과 Status를 불러옵니다. Candidate, Approved, Rejected는 모두 정규화된 Role Name이 같은 새 Candidate 생성을 막습니다.
+- 검색 전에 모든 기존 Role Name과 Status를 불러와 세 Agent가 같은 snapshot을 사용하게 합니다. Candidate, Approved, Rejected는 모두 정규화된 Role Name이 같은 새 Candidate 생성을 막습니다.
 - seed 이름과 책임 관련 검색어를 사용해 AI, Security, AI × Security를 각각 검색합니다. seed는 발견을 돕지만 허용 목록으로 사용하지 않습니다.
 - 대한민국 채용시장을 한국어와 영어로 검색합니다. 기업 공식 채용 페이지를 먼저 보고 Saramin, JobKorea, Wanted, Jumpit 같은 국내 채용 플랫폼을 다음으로 확인합니다. 이 순서는 우선순위이지 완전한 허용 목록이 아닙니다.
 - 다른 국내외 채용 사이트는 공고 원문에서 근무지가 대한민국임을 확인한 경우에만 사용합니다. 가능하면 글로벌 집계 사이트 하나에 의존하지 말고 기업의 원본 채용 공고와 함께 검증합니다.
