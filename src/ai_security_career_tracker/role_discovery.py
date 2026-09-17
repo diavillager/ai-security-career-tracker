@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import unicodedata
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -113,6 +114,7 @@ class EvidenceSource:
     url: str
     published_on: date
     source_type: EvidenceType = EvidenceType.INFORMATIONAL
+    employer_name: str | None = None
     job_location: str | None = None
     job_market: str | None = None
 
@@ -129,6 +131,10 @@ class EvidenceSource:
                 "and a verified published date."
             )
         if self.source_type is EvidenceType.JOB_POSTING:
+            if not self.employer_name or not self.employer_name.strip():
+                raise DiscoveryValidationError(
+                    "Every job posting needs a verified employer name."
+                )
             if not self.job_location or not self.job_location.strip():
                 raise DiscoveryValidationError(
                     "Every job posting needs an explicitly verified job location."
@@ -443,6 +449,32 @@ def _merge_experience_levels(
     return next(iter(stated))
 
 
+def _normalize_employer_name(value: str) -> str:
+    """Normalize common legal-name variations without semantic matching."""
+    normalized = unicodedata.normalize("NFKC", value).casefold()
+    normalized = re.sub(r"\(\s*주\s*\)|주식회사", "", normalized)
+    normalized = re.sub(
+        r"\b(?:incorporated|inc|corporation|corp|company|co|limited|ltd)\b\.?,?",
+        "",
+        normalized,
+    )
+    return re.sub(r"[^0-9a-z가-힣]+", "", normalized)
+
+
+def _independent_evidence_key(
+    role_name: str,
+    source: EvidenceSource,
+) -> tuple[str, ...]:
+    """Group mirrors of the same vacancy while keeping other sources URL-based."""
+    if source.source_type is EvidenceType.JOB_POSTING:
+        return (
+            "job_posting",
+            _normalize_employer_name(source.employer_name or ""),
+            normalize_role_name(role_name),
+        )
+    return ("informational", source.url)
+
+
 def select_new_candidates(
     observations: tuple[RoleObservation, ...],
     existing_roles: tuple[ExistingRole, ...],
@@ -494,9 +526,14 @@ def select_new_candidates(
             for source in item.evidence_sources:
                 evidence_by_url.setdefault(source.url, source)
 
-        if len(evidence_by_url) < 2:
+        independent_evidence = {
+            _independent_evidence_key(item.role_name, source)
+            for item in group
+            for source in item.evidence_sources
+        }
+        if len(independent_evidence) < 2:
             raise DiscoveryValidationError(
-                f"At least two distinct evidence sources are required for role: "
+                f"At least two independent evidence sources are required for role: "
                 f"{group[0].role_name}"
             )
 
@@ -602,6 +639,11 @@ def parse_agent_discovery_result(
                             source.get("published_on"), "published_on"
                         ),
                         source_type=source_type,
+                        employer_name=(
+                            _string(source.get("employer_name"), "employer_name")
+                            if source.get("employer_name") is not None
+                            else None
+                        ),
                         job_location=(
                             _string(source.get("job_location"), "job_location")
                             if source.get("job_location") is not None

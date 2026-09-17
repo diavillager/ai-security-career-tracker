@@ -23,7 +23,7 @@ agent, tool use, RAG, evaluation, model serving, orchestration, observability, I
 
 부모 workflow는 [role-discovery-agent-contract.md](role-discovery-agent-contract.md)에 따라 AI는 `ai_role_researcher`, Security는 `security_role_researcher`, AI × Security는 `ai_security_role_researcher`에 동시에 위임합니다. 세 Agent는 같은 `run_id`, 검색 기간, 대한민국 채용시장, 기존 Roles DB snapshot을 사용합니다.
 
-각 Agent는 할당된 영역의 조사와 원본 근거 정리만 담당합니다. 세 영역 결과가 모두 성공한 뒤 부모 workflow가 URL 중복을 제거하고 기존 Python 검증으로 Candidate 요건을 판정합니다. 영역 하나가 실패하거나 누락되면 나머지 결과만으로 전체 조사가 끝났다고 보고하거나 Candidate를 저장하지 않습니다. 같은 Role Name이 서로 다른 Category로 반환되면 자동 선택하지 않고 검토가 필요한 충돌로 처리합니다.
+각 Agent는 할당된 영역의 조사와 원본 근거 정리만 담당합니다. 세 영역 결과가 모두 성공한 뒤 부모 workflow가 URL 중복을 제거하고, 같은 회사의 같은 직무 공고 복제본을 하나의 독립 근거로 묶은 다음 Python 검증으로 Candidate 요건을 판정합니다. 영역 하나가 실패하거나 누락되면 나머지 결과만으로 전체 조사가 끝났다고 보고하거나 Candidate를 저장하지 않습니다. 같은 Role Name이 서로 다른 Category로 반환되면 자동 선택하지 않고 검토가 필요한 충돌로 처리합니다.
 
 세 응답이 `parse_agent_discovery_result`를 통과하면 [role-evidence-reviewer-contract.md](role-evidence-reviewer-contract.md)에 따라 `role_evidence_reviewer`를 순차 실행합니다. 검토 Agent는 반환된 근거 URL의 접근성, 같은 공고 복제본 여부, 출처 충돌, 의미 중복과 Category 모호성을 표시합니다. `flagged` 결과는 Candidate를 자동 승인하거나 거절하지 않으며, 최종 보고에서 사용자가 확인할 항목으로 함께 보여줍니다.
 
@@ -47,7 +47,7 @@ Role Discovery는 대한민국 채용시장 조사입니다. 모든 후보에는
 - Team description
 - Product 또는 domain 맥락
 - source name, original URL, 확인된 Published Date
-- source type, 그리고 Job Posting이면 확인된 대한민국 근무지
+- source type, 그리고 Job Posting이면 원문에서 확인한 회사명과 대한민국 근무지
 
 모든 근거를 종합해 분류합니다. Agent Platform 직무에 Security 책임이 포함돼 있으면 AI × Security로 볼 수 있으며, Product Security 직무도 실제 범위에 LLM application이나 agent tool abuse가 포함되면 AI × Security로 볼 수 있습니다. 근거가 약하거나 충돌하면 억지로 분류하지 말고 불확실하다고 표시합니다.
 
@@ -62,7 +62,7 @@ Role Discovery는 대한민국 채용시장 조사입니다. 모든 후보에는
 
 ## Candidate 저장
 
-직무가 새롭고 검색 기간 안의 Published Date가 확인된 서로 다른 원본 HTTP 또는 HTTPS 근거 URL이 2개 이상일 때만 Roles DB 항목을 만듭니다.
+직무가 새롭고 검색 기간 안의 Published Date가 확인된 독립 근거가 2개 이상일 때만 Roles DB 항목을 만듭니다. 채용 공고는 URL이 달라도 정규화된 회사명과 직무명이 같으면 같은 채용 건의 복제본으로 보고 하나로 셉니다. 비채용 정보는 서로 다른 원본 HTTP 또는 HTTPS URL을 각각 독립 근거로 셉니다. 검토를 위해 확인한 모든 원본 URL은 그대로 보존합니다.
 
 두 출처 중 하나 이상은 대한민국 Job Posting이어야 합니다. 추가로 사용하는 비채용 정보는 국내외 출처 모두 허용합니다.
 

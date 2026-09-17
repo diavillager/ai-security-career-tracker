@@ -94,7 +94,9 @@ class RoleDiscoveryAgentTests(unittest.TestCase):
             "세 영역 결과가 모두 성공",
             "하나의 JSON 객체만",
             "`required_skills`를 각각 1개 이상",
-            "서로 다른 원본 근거 URL 2개 이상",
+            "독립된 근거 2개 이상",
+            "`employer_name`",
+            "하나의 독립 근거로 셉니다",
             "`exclusions`에 `other`",
         )
         for requirement in contract_requirements:

@@ -51,6 +51,7 @@ def observation(
     source_url: str = "https://careers.example/roles/agent-security",
     include_supporting_source: bool = True,
     experience_level: ExperienceLevel = ExperienceLevel.EXPERIENCED,
+    employer_name: str = "Example Company",
 ) -> RoleObservation:
     sources = [
         EvidenceSource(
@@ -58,6 +59,7 @@ def observation(
             source_url,
             date(2026, 9, 14),
             source_type=EvidenceType.JOB_POSTING,
+            employer_name=employer_name,
             job_location="Seoul",
             job_market=SOUTH_KOREA_JOB_MARKET,
         )
@@ -208,6 +210,50 @@ class RoleDiscoveryTests(unittest.TestCase):
         self.assertEqual(result.agent_name, "ai_role_researcher")
         self.assertEqual(result.category, Category.AI)
         self.assertEqual(result.search_period, default_period(date(2026, 9, 15)))
+
+    def test_agent_payload_preserves_job_posting_employer_name(self) -> None:
+        payload = {
+            "run_id": "run-1",
+            "agent_name": "ai_role_researcher",
+            "category": "AI",
+            "search_period": {"start": "2026-09-09", "end": "2026-09-15"},
+            "job_market": "South Korea",
+            "sources_checked": 1,
+            "observations": [
+                {
+                    "role_name": "AI Developer",
+                    "suggested_category": "AI",
+                    "description": "AI 제품을 개발합니다.",
+                    "key_responsibilities": ["AI 기능 개발"],
+                    "required_skills": ["Python"],
+                    "team_description": "AI 팀",
+                    "product_context": "AI 서비스",
+                    "discovery_reason": "국내 채용 공고에서 확인했습니다.",
+                    "experience_level": "경력",
+                    "evidence_sources": [
+                        {
+                            "name": "Example Careers",
+                            "url": "https://careers.example/ai-developer",
+                            "published_on": "2026-09-15",
+                            "source_type": "Job Posting",
+                            "employer_name": "Example Company",
+                            "job_location": "Seoul",
+                            "job_market": "South Korea",
+                        }
+                    ],
+                }
+            ],
+            "exclusions": [],
+            "existing_matches": [],
+            "blockers": [],
+        }
+
+        result = parse_agent_discovery_result(payload)
+
+        self.assertEqual(
+            result.observations[0].evidence_sources[0].employer_name,
+            "Example Company",
+        )
 
     def test_agent_payload_rejects_non_json_explanation(self) -> None:
         with self.assertRaises(DiscoveryValidationError):
@@ -529,11 +575,13 @@ class RoleDiscoveryTests(unittest.TestCase):
                     source_url="https://careers.example/entry",
                     include_supporting_source=False,
                     experience_level=ExperienceLevel.ENTRY,
+                    employer_name="Entry Company",
                 ),
                 observation(
                     source_url="https://careers.example/experienced",
                     include_supporting_source=False,
                     experience_level=ExperienceLevel.EXPERIENCED,
+                    employer_name="Experienced Company",
                 ),
             ),
             (),
@@ -556,6 +604,7 @@ class RoleDiscoveryTests(unittest.TestCase):
                 observation(
                     source_url="https://engineering.example/agent-security",
                     include_supporting_source=False,
+                    employer_name="Another Company",
                 ),
             ),
             (),
@@ -573,6 +622,43 @@ class RoleDiscoveryTests(unittest.TestCase):
                 (),
                 date(2026, 9, 15),
                 default_period(date(2026, 9, 15)),
+            )
+
+    def test_mirrored_job_postings_count_as_one_independent_source(self) -> None:
+        with self.assertRaisesRegex(
+            DiscoveryValidationError,
+            "At least two independent evidence sources",
+        ):
+            select_new_candidates(
+                (
+                    observation(
+                        source_url="https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=1",
+                        include_supporting_source=False,
+                        employer_name="(주) Beyond Data",
+                    ),
+                    observation(
+                        source_url="https://www.jobkorea.co.kr/Recruit/GI_Read/1",
+                        include_supporting_source=False,
+                        employer_name="Beyond Data",
+                    ),
+                ),
+                (),
+                date(2026, 9, 15),
+                default_period(date(2026, 9, 15)),
+            )
+
+    def test_job_posting_requires_employer_name(self) -> None:
+        with self.assertRaisesRegex(
+            DiscoveryValidationError,
+            "verified employer name",
+        ):
+            EvidenceSource(
+                "Example Careers",
+                "https://careers.example/roles/agent-security",
+                date(2026, 9, 15),
+                source_type=EvidenceType.JOB_POSTING,
+                job_location="Seoul",
+                job_market=SOUTH_KOREA_JOB_MARKET,
             )
 
     def test_source_outside_search_period_is_rejected(self) -> None:
@@ -626,6 +712,7 @@ class RoleDiscoveryTests(unittest.TestCase):
                 "https://careers.example/roles/overseas",
                 date(2026, 9, 15),
                 source_type=EvidenceType.JOB_POSTING,
+                employer_name="Example Company",
                 job_location="McLean, Virginia",
                 job_market="United States",
             )
