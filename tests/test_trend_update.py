@@ -14,13 +14,13 @@ from ai_security_career_tracker.role_discovery import (
     RoleStatus,
     default_period,
 )
+from ai_security_career_tracker.classification import TrendSourceType
 from ai_security_career_tracker.trend_update import (
     ApprovedRole,
     RoleSnapshotRecord,
     SOUTH_KOREA_JOB_MARKET,
     TrendApplyError,
     TrendObservation,
-    TrendSourceType,
     TrendUpdatePlan,
     TrendValidationError,
     apply_trend_update_plan,
@@ -38,11 +38,14 @@ APPROVED = ApprovedRole("role-1", "AI Security Engineer", Category.AI_SECURITY)
 
 def observation(
     *,
-    source_type: TrendSourceType = TrendSourceType.RESEARCH,
+    source_type: TrendSourceType = TrendSourceType.RESEARCH_REPORT,
     url: str = "https://research.example/ai-security-agents",
     published_on: date = date(2026, 9, 15),
     role_names: tuple[str, ...] = ("AI Security Engineer",),
-    domain: Category = Category.AI_SECURITY,
+    domains: tuple[Category, ...] = (Category.AI_SECURITY,),
+    classification_basis: str = (
+        "원문이 AI 시스템의 보안 통제와 관련 직무 책임을 함께 설명합니다."
+    ),
     job_location: str | None = None,
     job_market: str | None = None,
     canonical_url: str | None = None,
@@ -56,7 +59,8 @@ def observation(
         original_url=url,
         published_on=published_on,
         related_role_names=role_names,
-        domain=domain,
+        domains=domains,
+        classification_basis=classification_basis,
         job_location=job_location,
         job_market=job_market,
         canonical_url=canonical_url,
@@ -267,7 +271,10 @@ class TrendUpdateTests(unittest.TestCase):
             date(2026, 9, 17),
         )
 
-        self.assertEqual(plan.trends[0].observation.source_type, TrendSourceType.RESEARCH)
+        self.assertEqual(
+            plan.trends[0].observation.source_type,
+            TrendSourceType.RESEARCH_REPORT,
+        )
 
     def test_job_posting_requires_south_korea_location(self) -> None:
         with self.assertRaisesRegex(TrendValidationError, "South Korea job market"):
@@ -286,11 +293,17 @@ class TrendUpdateTests(unittest.TestCase):
 
         self.assertEqual(item.job_market, SOUTH_KOREA_JOB_MARKET)
 
-    def test_domain_must_match_a_related_role(self) -> None:
-        with self.assertRaisesRegex(TrendValidationError, "Domain must match"):
+    def test_domain_must_be_supported_by_a_related_role(self) -> None:
+        ai_role = ApprovedRole("role-ai", "AI Engineer", Category.AI)
+        with self.assertRaisesRegex(TrendValidationError, "must be supported"):
             plan_trend_update(
-                (observation(domain=Category.AI),),
-                (APPROVED,),
+                (
+                    observation(
+                        role_names=("AI Engineer",),
+                        domains=(Category.SECURITY,),
+                    ),
+                ),
+                (ai_role,),
                 (),
                 PERIOD,
                 date(2026, 9, 17),
@@ -328,7 +341,44 @@ class TrendUpdateTests(unittest.TestCase):
         )
         self.assertEqual(
             page.properties["Domain"],
-            {"select": {"name": "AI × Security"}},
+            {"multi_select": [{"name": "AI × Security"}]},
+        )
+
+    def test_multiple_domains_and_related_roles_are_written(self) -> None:
+        ai_role = ApprovedRole("role-ai", "AI Engineer", Category.AI)
+        security_role = ApprovedRole(
+            "role-security",
+            "Security Engineer",
+            Category.SECURITY,
+        )
+        plan = plan_trend_update(
+            (
+                observation(
+                    role_names=("AI Engineer", "Security Engineer"),
+                    domains=(Category.AI, Category.SECURITY, Category.AI_SECURITY),
+                ),
+            ),
+            (ai_role, security_role),
+            (),
+            PERIOD,
+            date(2026, 9, 17),
+        )
+
+        properties = build_notion_trend_pages(plan)[0].properties
+
+        self.assertEqual(
+            properties["Related Roles"],
+            {"relation": [{"id": "role-ai"}, {"id": "role-security"}]},
+        )
+        self.assertEqual(
+            properties["Domain"],
+            {
+                "multi_select": [
+                    {"name": "AI"},
+                    {"name": "Security"},
+                    {"name": "AI × Security"},
+                ]
+            },
         )
 
     def test_apply_failure_reports_created_and_failed_urls(self) -> None:
@@ -388,12 +438,15 @@ class TrendUpdateTests(unittest.TestCase):
                         "title": "Securing agentic AI systems",
                         "summary": "요약",
                         "key_insight": "핵심 발견",
-                        "source_type": "Research",
+                        "source_type": "Research Report",
                         "source_name": "Example Research",
                         "original_url": "https://research.example/agent-security",
                         "published_date": "2026-09-15",
                         "related_roles": ["AI Security Engineer"],
-                        "domain": "AI × Security",
+                        "domains": ["AI", "Security", "AI × Security"],
+                        "classification_basis": (
+                            "원문이 AI 시스템과 보안 통제를 함께 설명합니다."
+                        ),
                     }
                 ]
             }
@@ -401,6 +454,11 @@ class TrendUpdateTests(unittest.TestCase):
 
         self.assertEqual(parsed[0].published_on, date(2026, 9, 15))
         self.assertEqual(parsed[0].related_role_names, ("AI Security Engineer",))
+        self.assertEqual(
+            parsed[0].domains,
+            (Category.AI, Category.SECURITY, Category.AI_SECURITY),
+        )
+        self.assertIn("보안 통제", parsed[0].classification_basis)
 
     def test_skill_documents_safe_trend_update_workflow(self) -> None:
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
