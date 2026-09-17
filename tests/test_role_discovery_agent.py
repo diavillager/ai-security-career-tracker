@@ -96,6 +96,8 @@ class RoleDiscoveryAgentTests(unittest.TestCase):
             "`required_skills`를 각각 1개 이상",
             "독립된 근거 2개 이상",
             "`employer_name`",
+            "`job_title`",
+            "하나의 observation에 합치지",
             "하나의 독립 근거로 셉니다",
             "`exclusions`에 `other`",
         )

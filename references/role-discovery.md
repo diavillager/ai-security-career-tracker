@@ -47,7 +47,9 @@ Role Discovery는 대한민국 채용시장 조사입니다. 모든 후보에는
 - Team description
 - Product 또는 domain 맥락
 - source name, original URL, 확인된 Published Date
-- source type, 그리고 Job Posting이면 원문에서 확인한 회사명과 대한민국 근무지
+- source type, 그리고 Job Posting이면 원문에서 확인한 회사명, 정확한 `job_title`과 대한민국 근무지
+
+하나의 observation에는 정규화 후 같은 정확한 Job title을 가진 공고만 포함합니다. 책임이나 기술이 비슷하더라도 원문 직무명이 다른 공고를 하나의 Role Name으로 합치지 않습니다. 각 직무명은 독립 근거 요건을 따로 충족해야 합니다.
 
 모든 근거를 종합해 분류합니다. Agent Platform 직무에 Security 책임이 포함돼 있으면 AI × Security로 볼 수 있으며, Product Security 직무도 실제 범위에 LLM application이나 agent tool abuse가 포함되면 AI × Security로 볼 수 있습니다. 근거가 약하거나 충돌하면 억지로 분류하지 말고 불확실하다고 표시합니다.
 

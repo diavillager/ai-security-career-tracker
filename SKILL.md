@@ -28,6 +28,7 @@ MVP 기본 구조, Notion 데이터베이스 설정, Role Discovery와 Candidate
 - Role Discovery와 모든 채용·구인구직 정보는 근무지가 대한민국으로 확인된 공고로 한정합니다. 채용 정보가 아닌 해외 정보는 허용합니다.
 - 기업 공식 채용 페이지와 Saramin, JobKorea, Wanted, Jumpit 같은 국내 채용 플랫폼을 우선합니다. 이 목록은 완전한 허용 목록이 아니라 우선순위입니다.
 - 채용 근거가 신입, 경력, 신입·경력 또는 미확인 중 어디에 해당하는지 기록합니다.
+- Job Posting마다 원문의 정확한 `job_title`을 기록하고, 서로 다른 원문 직무명을 하나의 observation이나 Candidate로 합치지 않습니다.
 - 새 직무는 Status Candidate로 저장합니다. 사용자가 승인하기 전에는 Trend Update에 사용하지 않습니다.
 - Rejected 직무는 삭제하지 않고 검토 기록으로 보존합니다.
 - 저장한 모든 직무와 동향에 원본 출처 URL을 보존합니다.
@@ -72,6 +73,7 @@ MVP 기본 구조, Notion 데이터베이스 설정, Role Discovery와 Candidate
 - 검색 기간 안의 원본 Published Date를 요구합니다. 검색엔진 수집일, 접속일, 현재 모집 중이라는 상태로 대신하지 않으며 게시일이 없는 자료는 제외합니다.
 - 직무명뿐 아니라 책임, 기술, 팀, 제품 맥락을 함께 평가합니다. 직무명만으로 분류하지 않습니다.
 - 채용 근거에 명시된 Experience Level을 신입, 경력, 신입·경력, 미확인 중 하나로 추출합니다. 직무명만으로 추정하지 않습니다.
+- Job Posting의 `job_title`이 observation의 Role Name과 정규화 후 다르면 Python 구조 검사를 통과시키지 않습니다. 책임이 유사해도 서로 다른 직무명은 각자 근거 요건을 충족해야 합니다.
 - 충분한 근거가 있는 새 직무만 Status Candidate로 저장합니다. 독립된 근거를 최소 2개 요구하고 그중 하나 이상은 대한민국 근무가 확인된 채용 공고여야 하며, 모든 출처 이름과 원본 URL을 보존합니다. 같은 회사의 같은 직무 공고 복제본은 URL이 달라도 하나의 독립 근거로 셉니다.
 - Notion의 Evidence Sources에는 `format_candidate_evidence_sources` 결과를 사용해 복제본을 포함한 모든 URL과 근거 그룹을 남깁니다. Notes에는 `format_candidate_evidence_note` 결과를 포함해 독립 근거 수, 보존 URL 수와 동일 공고 그룹을 구분합니다.
 - 실행 전에 조회한 Approved 직무 목록은 실행 중 바꾸지 않습니다. 같은 실행에서 Trend Update를 시작하거나 새 Candidate를 검색어로 사용하지 않습니다.

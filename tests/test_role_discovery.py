@@ -64,6 +64,7 @@ def observation(
             date(2026, 9, 14),
             source_type=EvidenceType.JOB_POSTING,
             employer_name=employer_name,
+            job_title=role_name,
             job_location="Seoul",
             job_market=SOUTH_KOREA_JOB_MARKET,
         )
@@ -241,6 +242,7 @@ class RoleDiscoveryTests(unittest.TestCase):
                             "published_on": "2026-09-15",
                             "source_type": "Job Posting",
                             "employer_name": "Example Company",
+                            "job_title": "AI Developer",
                             "job_location": "Seoul",
                             "job_market": "South Korea",
                         }
@@ -257,6 +259,10 @@ class RoleDiscoveryTests(unittest.TestCase):
         self.assertEqual(
             result.observations[0].evidence_sources[0].employer_name,
             "Example Company",
+        )
+        self.assertEqual(
+            result.observations[0].evidence_sources[0].job_title,
+            "AI Developer",
         )
 
     def test_agent_payload_rejects_non_json_explanation(self) -> None:
@@ -711,6 +717,7 @@ class RoleDiscoveryTests(unittest.TestCase):
                 "https://careers.example/roles/agent-security",
                 date(2026, 9, 15),
                 source_type=EvidenceType.JOB_POSTING,
+                job_title="Agent Security Engineer",
                 job_location="Seoul",
                 job_market=SOUTH_KOREA_JOB_MARKET,
             )
@@ -767,8 +774,54 @@ class RoleDiscoveryTests(unittest.TestCase):
                 date(2026, 9, 15),
                 source_type=EvidenceType.JOB_POSTING,
                 employer_name="Example Company",
+                job_title="Agent Security Engineer",
                 job_location="McLean, Virginia",
                 job_market="United States",
+            )
+
+    def test_job_posting_requires_exact_source_job_title(self) -> None:
+        with self.assertRaisesRegex(
+            DiscoveryValidationError,
+            "exact title from the source",
+        ):
+            EvidenceSource(
+                "Example Careers",
+                "https://careers.example/roles/agent-security",
+                date(2026, 9, 15),
+                source_type=EvidenceType.JOB_POSTING,
+                employer_name="Example Company",
+                job_location="Seoul",
+                job_market=SOUTH_KOREA_JOB_MARKET,
+            )
+
+    def test_observation_rejects_semantically_merged_job_titles(self) -> None:
+        item = observation()
+        mismatched_source = EvidenceSource(
+            "Another Careers",
+            "https://careers.example/network-security-field-engineer",
+            date(2026, 9, 15),
+            source_type=EvidenceType.JOB_POSTING,
+            employer_name="Another Company",
+            job_title="Network and Information Security Field Engineer",
+            job_location="Seoul",
+            job_market=SOUTH_KOREA_JOB_MARKET,
+        )
+
+        with self.assertRaisesRegex(
+            DiscoveryValidationError,
+            "without semantic merging",
+        ):
+            RoleObservation(
+                role_name="Network Security Solution and Infrastructure Engineer",
+                suggested_category=item.suggested_category,
+                description=item.description,
+                key_responsibilities=item.key_responsibilities,
+                required_skills=item.required_skills,
+                team_description=item.team_description,
+                product_context=item.product_context,
+                discovery_reason=item.discovery_reason,
+                experience_level=item.experience_level,
+                evidence_sources=(mismatched_source,),
             )
 
     def test_global_informational_source_is_allowed_as_supporting_evidence(self) -> None:
