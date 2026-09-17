@@ -4,7 +4,7 @@ AI, Security, AI × Security 영역의 새로운 직무를 발견하고, 사용�
 
 ## 현재 단계
 
-프로젝트 기본 골격, Notion 데이터베이스 생성·재사용, Role Discovery의 영역별 조사 Agent 세 개와 종합 근거 검토 Agent, Candidate 승인·거절까지 구현했습니다. Trend Update는 아직 구현되지 않았습니다.
+프로젝트 기본 골격, Notion 데이터베이스 생성·재사용, Role Discovery의 영역별 조사 Agent 세 개와 종합 근거 검토 Agent, Candidate 승인·거절과 Approved 직무의 Trend Update까지 구현했습니다.
 
 ## 확정된 기본값
 
@@ -39,13 +39,16 @@ AI, Security, AI × Security 영역의 새로운 직무를 발견하고, 사용�
 - `references/role-discovery-agent-contract.md`: 세 조사 Agent의 공통 입력·출력 계약
 - `references/role-evidence-reviewer-contract.md`: 종합 근거 검토 Agent의 입력·출력 계약
 - `references/candidate-review.md`: Candidate 자연어 결정, 검증, Notion 적용과 실패 보고 절차
+- `references/trend-update.md`: Approved 직무 동향 검색, 검증, 중복 확인과 Notion 저장 절차
 - `src/ai_security_career_tracker/notion_databases.py`: 로컬 DB 식별자 검증 및 저장 도구
 - `src/ai_security_career_tracker/role_discovery.py`: 세 영역 검색 계획과 신규 Candidate 판정 도구
 - `src/ai_security_career_tracker/candidate_review.py`: Candidate 승인·거절 계획과 Notion 속성 적용 도구
+- `src/ai_security_career_tracker/trend_update.py`: Approved 직무 검색 계획, 동향 검증과 Trends DB 속성 적용 도구
 - `tests/test_foundation.py`: 기본 구조와 설정 검증
 - `tests/test_role_discovery.py`: 검색 기간, 중복 차단, 다중 출처 및 Candidate 상태 검증
 - `tests/test_role_discovery_agent.py`: Agent 설정과 역할 경계 검증
 - `tests/test_candidate_review.py`: 승인·거절 계획, Notion 속성 연결과 쓰기 실패 검증
+- `tests/test_trend_update.py`: Approved snapshot, 출처·기간·URL 검증과 Trends DB 쓰기 실패 검증
 
 실제 Notion 데이터베이스 식별자는 Git에 올라가지 않는 `config.toml`에 저장합니다. 두 식별자 중 하나만 있거나 기존 값과 다른 값으로 바꾸려 하면 도구가 중단됩니다.
 
@@ -58,6 +61,8 @@ Candidate 판정에는 독립 근거가 2개 이상 필요합니다. 같은 회�
 Notion의 `Evidence Sources`에는 `[독립 근거 1 · 동일 공고] Source Name — Original URL` 형식으로 복제본을 포함한 모든 URL을 기록합니다. `Notes`에는 독립 근거 수와 보존 URL 수를 따로 표시합니다.
 
 Candidate 승인·거절은 사용자가 대상과 결정을 명시한 뒤에만 실행합니다. Python이 전체 요청을 먼저 검증하고 정확한 Notion 속성 변경을 만든 다음, 확인된 Roles DB의 `Status`, `Last Reviewed`와 필요한 `Notes`만 갱신합니다. 중간 실패가 발생하면 성공한 page와 실패한 page를 구분해 보고하고 데이터베이스를 다시 조회합니다.
+
+Trend Update는 실행 시작 시점에 `Approved`인 직무만 검색합니다. 비채용 동향은 해외 출처도 허용하지만 커뮤니티와 소셜 출처는 제외하며, Job Posting은 대한민국 근무지가 확인된 경우만 사용합니다. 게시일·Related Roles·Domain을 모두 검증하고 Trends DB에 정확히 같은 `Original URL`이 있으면 다시 저장하지 않습니다. 실제 Notion 쓰기 직전에 새 항목을 보여주고 확인을 받습니다.
 
 ## 테스트
 

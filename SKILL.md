@@ -9,7 +9,7 @@ AI, Security, AI × Security 영역에서 변화하는 직무를 추적하되, �
 
 ## 현재 개발 범위
 
-MVP 기본 구조, Notion 데이터베이스 설정, Role Discovery와 Candidate 승인·거절 변경까지 구현됐습니다. Trend Update는 아직 구현되지 않았으므로 구현됐다고 안내하지 않습니다.
+MVP 기본 구조, Notion 데이터베이스 설정, Role Discovery, Candidate 승인·거절 변경과 Trend Update까지 구현됐습니다.
 
 ## 언어 지침
 
@@ -93,6 +93,20 @@ MVP 기본 구조, Notion 데이터베이스 설정, Role Discovery와 Candidate
 8. 성공, 이미 같은 상태, 실패 항목을 구분해 보고합니다. 중간 실패 시 자동 재시도나 반대 상태로의 되돌리기를 하지 않고 Roles DB를 다시 조회합니다.
 
 Candidate 승인·거절 뒤 같은 실행에서 Trend Update를 자동 시작하지 않습니다. Trend Update는 별도 요청으로만 시작합니다.
+
+## Trend Update
+
+사용자가 승인된 직무의 최신 동향 수집을 요청하면 [references/trend-update.md](references/trend-update.md)를 읽고 다음 순서로 처리합니다.
+
+1. 연결된 Notion workspace, 프로젝트 페이지와 저장된 Roles DB·Trends DB를 확인합니다.
+2. Roles DB에서 모든 Role Name, Category, Status와 page ID를 한 번 조회합니다.
+3. `build_trend_search_tasks`로 실행 시작 시점의 Approved 직무만 검색 작업으로 만듭니다. Candidate와 Rejected는 제외합니다.
+4. Codex 웹 검색으로 기본 최근 7일의 기술·산업·연구·제품·보안 동향을 찾고 `parse_trend_observations`로 구조를 검사합니다.
+5. Trends DB의 기존 Original URL을 조회한 뒤 `plan_trend_update`로 게시일, 출처, Related Roles, Domain과 정확한 URL 중복을 모두 검증합니다.
+6. `build_notion_trend_pages`로 새 page 속성을 만들고, 실제 Notion 쓰기 직전에 새 항목과 건너뛸 URL을 사용자에게 보여주고 확인을 받습니다.
+7. 확인된 계획만 `apply_trend_update_plan`으로 저장합니다. 중간 실패 시 성공한 URL과 실패한 URL을 구분해 보고하고 자동 재시도하거나 생성된 page를 자동 삭제하지 않습니다.
+
+비채용 동향은 해외 출처를 허용하지만 커뮤니티와 소셜 출처는 제외합니다. Job Posting은 원문에서 대한민국 근무지가 확인된 경우만 허용합니다. 원문 Published Date가 없거나 기간 밖인 자료는 저장하지 않습니다.
 
 ## 승인 경계
 
