@@ -6,9 +6,15 @@ import json
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
-from enum import StrEnum
 from urllib.parse import urlsplit
 
+from .classification import (
+    ClassificationValidationError,
+    TrendSourceType,
+    resolve_related_roles,
+    validate_classification_fields,
+    validate_domain_role_support,
+)
 from .role_discovery import Category, DateRange, RoleStatus, normalize_role_name
 from .source_urls import (
     SourceUrlError,
@@ -33,14 +39,6 @@ class TrendApplyError(RuntimeError):
         super().__init__(f"Trend write failed for URL: {failed_url}")
         self.failed_url = failed_url
         self.created_urls = created_urls
-
-
-class TrendSourceType(StrEnum):
-    JOB_POSTING = "Job Posting"
-    REPORT = "Report"
-    ARTICLE = "Article"
-    RESEARCH = "Research"
-    OFFICIAL = "Official"
 
 
 SOUTH_KOREA_JOB_MARKET = "South Korea"
@@ -94,7 +92,8 @@ class TrendObservation:
     original_url: str
     published_on: date
     related_role_names: tuple[str, ...]
-    domain: Category
+    domains: tuple[Category, ...]
+    classification_basis: str
     job_location: str | None = None
     job_market: str | None = None
     canonical_url: str | None = None
@@ -112,13 +111,22 @@ class TrendObservation:
             or parsed.scheme not in {"http", "https"}
             or not parsed.netloc
             or type(self.published_on) is not date
-            or not self.related_role_names
-            or any(not name.strip() for name in self.related_role_names)
         ):
             raise TrendValidationError(
                 "Every trend needs complete text, an original HTTP or HTTPS URL, "
-                "a verified published date, and at least one Related Role."
+                "and a verified published date."
             )
+        try:
+            validate_classification_fields(
+                source_type=self.source_type,
+                domains=self.domains,
+                related_role_names=self.related_role_names,
+                summary=self.summary,
+                key_insight=self.key_insight,
+                classification_basis=self.classification_basis,
+            )
+        except ClassificationValidationError as error:
+            raise TrendValidationError(str(error)) from error
         if _is_blocked_source(parsed.hostname or ""):
             raise TrendValidationError(
                 f"Community and social sources are excluded: {self.original_url}"
@@ -290,25 +298,17 @@ def plan_trend_update(
                 f"Duplicate URL after normalization in one Trend Update result: {stored_url}"
             )
 
-        related_roles: list[ApprovedRole] = []
-        related_names: set[str] = set()
-        for role_name in observation.related_role_names:
-            normalized_name = normalize_role_name(role_name)
-            if normalized_name in related_names:
-                continue
-            role = roles_by_name.get(normalized_name)
-            if role is None:
-                raise TrendValidationError(
-                    "Every Related Role must be Approved in the run-start snapshot: "
-                    f"{role_name}"
-                )
-            related_names.add(normalized_name)
-            related_roles.append(role)
-
-        if not any(role.category is observation.domain for role in related_roles):
-            raise TrendValidationError(
-                f"Trend Domain must match at least one Related Role: {observation.title}"
+        try:
+            related_roles = resolve_related_roles(
+                observation.related_role_names,
+                roles_by_name,
             )
+            validate_domain_role_support(
+                observation.domains,
+                tuple(role.category for role in related_roles),
+            )
+        except ClassificationValidationError as error:
+            raise TrendValidationError(str(error)) from error
 
         planned.append(
             PlannedTrend(
@@ -385,7 +385,11 @@ def build_notion_trend_pages(
                     {"id": record_id} for record_id in planned.related_role_ids
                 ]
             },
-            "Domain": {"select": {"name": observation.domain.value}},
+            "Domain": {
+                "multi_select": [
+                    {"name": domain.value} for domain in observation.domains
+                ]
+            },
         }
         pages.append(
             NotionTrendPage(
@@ -492,7 +496,17 @@ def parse_trend_observations(
                         observation.get("related_roles"),
                         "related_roles",
                     ),
-                    domain=Category(_text(observation.get("domain"), "domain")),
+                    domains=tuple(
+                        Category(value)
+                        for value in _text_list(
+                            observation.get("domains"),
+                            "domains",
+                        )
+                    ),
+                    classification_basis=_text(
+                        observation.get("classification_basis"),
+                        "classification_basis",
+                    ),
                     job_location=(
                         _text(observation.get("job_location"), "job_location")
                         if observation.get("job_location") is not None

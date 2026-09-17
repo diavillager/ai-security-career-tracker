@@ -15,6 +15,8 @@ class ProjectFoundationTests(unittest.TestCase):
             "agents/openai.yaml",
             "config.example.toml",
             "references/product-requirements.md",
+            "references/classification-relations.md",
+            "src/ai_security_career_tracker/classification.py",
         )
 
         for relative_path in required:

@@ -36,7 +36,7 @@ Role Discovery는 새로운 Role Name을 발견하고 새 직무만 Candidate로
 
 Roles DB는 Role Name, Category, Status, Experience Level, Description, Key Responsibilities, First Discovered, Last Reviewed, Evidence Sources, Notes를 지원해야 합니다.
 
-Trends DB는 Title, Summary, Key Insight, Source Type, Source Name, Original URL, Published Date, Collected Date, Related Roles, Domain을 지원해야 합니다.
+Trends DB는 Title, Summary, Key Insight, Source Type, Source Name, Original URL, Published Date, Collected Date, Related Roles, Domain을 지원해야 합니다. Domain은 AI, Security, AI × Security를 하나 이상 담는 Multi-select이며 Related Roles는 Approved 직무 여러 개를 연결할 수 있는 Relation입니다.
 
 ## 구현 순서
 
