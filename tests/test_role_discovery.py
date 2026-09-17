@@ -37,6 +37,9 @@ from ai_security_career_tracker.role_discovery import (
     build_search_plan,
     consolidate_agent_results,
     default_period,
+    format_candidate_evidence_note,
+    format_candidate_evidence_sources,
+    group_independent_evidence,
     normalize_role_name,
     parse_agent_discovery_result,
     parse_role_evidence_review_result,
@@ -51,13 +54,16 @@ def observation(
     source_url: str = "https://careers.example/roles/agent-security",
     include_supporting_source: bool = True,
     experience_level: ExperienceLevel = ExperienceLevel.EXPERIENCED,
+    employer_name: str = "Example Company",
+    source_name: str = "Example Careers",
 ) -> RoleObservation:
     sources = [
         EvidenceSource(
-            "Example Careers",
+            source_name,
             source_url,
             date(2026, 9, 14),
             source_type=EvidenceType.JOB_POSTING,
+            employer_name=employer_name,
             job_location="Seoul",
             job_market=SOUTH_KOREA_JOB_MARKET,
         )
@@ -208,6 +214,50 @@ class RoleDiscoveryTests(unittest.TestCase):
         self.assertEqual(result.agent_name, "ai_role_researcher")
         self.assertEqual(result.category, Category.AI)
         self.assertEqual(result.search_period, default_period(date(2026, 9, 15)))
+
+    def test_agent_payload_preserves_job_posting_employer_name(self) -> None:
+        payload = {
+            "run_id": "run-1",
+            "agent_name": "ai_role_researcher",
+            "category": "AI",
+            "search_period": {"start": "2026-09-09", "end": "2026-09-15"},
+            "job_market": "South Korea",
+            "sources_checked": 1,
+            "observations": [
+                {
+                    "role_name": "AI Developer",
+                    "suggested_category": "AI",
+                    "description": "AI 제품을 개발합니다.",
+                    "key_responsibilities": ["AI 기능 개발"],
+                    "required_skills": ["Python"],
+                    "team_description": "AI 팀",
+                    "product_context": "AI 서비스",
+                    "discovery_reason": "국내 채용 공고에서 확인했습니다.",
+                    "experience_level": "경력",
+                    "evidence_sources": [
+                        {
+                            "name": "Example Careers",
+                            "url": "https://careers.example/ai-developer",
+                            "published_on": "2026-09-15",
+                            "source_type": "Job Posting",
+                            "employer_name": "Example Company",
+                            "job_location": "Seoul",
+                            "job_market": "South Korea",
+                        }
+                    ],
+                }
+            ],
+            "exclusions": [],
+            "existing_matches": [],
+            "blockers": [],
+        }
+
+        result = parse_agent_discovery_result(payload)
+
+        self.assertEqual(
+            result.observations[0].evidence_sources[0].employer_name,
+            "Example Company",
+        )
 
     def test_agent_payload_rejects_non_json_explanation(self) -> None:
         with self.assertRaises(DiscoveryValidationError):
@@ -529,11 +579,13 @@ class RoleDiscoveryTests(unittest.TestCase):
                     source_url="https://careers.example/entry",
                     include_supporting_source=False,
                     experience_level=ExperienceLevel.ENTRY,
+                    employer_name="Entry Company",
                 ),
                 observation(
                     source_url="https://careers.example/experienced",
                     include_supporting_source=False,
                     experience_level=ExperienceLevel.EXPERIENCED,
+                    employer_name="Experienced Company",
                 ),
             ),
             (),
@@ -556,6 +608,7 @@ class RoleDiscoveryTests(unittest.TestCase):
                 observation(
                     source_url="https://engineering.example/agent-security",
                     include_supporting_source=False,
+                    employer_name="Another Company",
                 ),
             ),
             (),
@@ -573,6 +626,93 @@ class RoleDiscoveryTests(unittest.TestCase):
                 (),
                 date(2026, 9, 15),
                 default_period(date(2026, 9, 15)),
+            )
+
+    def test_mirrored_job_postings_count_as_one_independent_source(self) -> None:
+        with self.assertRaisesRegex(
+            DiscoveryValidationError,
+            "At least two independent evidence sources",
+        ):
+            select_new_candidates(
+                (
+                    observation(
+                        source_url="https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=1",
+                        include_supporting_source=False,
+                        employer_name="(주) Beyond Data",
+                    ),
+                    observation(
+                        source_url="https://www.jobkorea.co.kr/Recruit/GI_Read/1",
+                        include_supporting_source=False,
+                        employer_name="Beyond Data",
+                    ),
+                ),
+                (),
+                date(2026, 9, 15),
+                default_period(date(2026, 9, 15)),
+            )
+
+    def test_candidate_keeps_every_mirror_url_and_labels_its_group(self) -> None:
+        outcome = select_new_candidates(
+            (
+                observation(
+                    role_name="AI Developer",
+                    source_name="Saramin",
+                    source_url="https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=1",
+                    employer_name="(주) Beyond Data",
+                ),
+                observation(
+                    role_name="AI Developer",
+                    source_name="JobKorea",
+                    source_url="https://www.jobkorea.co.kr/Recruit/GI_Read/1",
+                    include_supporting_source=False,
+                    employer_name="Beyond Data",
+                ),
+            ),
+            (),
+            date(2026, 9, 15),
+            default_period(date(2026, 9, 15)),
+        )
+
+        candidate = outcome.new_candidates[0]
+        groups = group_independent_evidence(
+            candidate.role_name,
+            candidate.evidence_sources,
+        )
+
+        self.assertEqual(len(candidate.evidence_sources), 3)
+        self.assertEqual(len(groups), 2)
+        self.assertEqual(len(groups[0]), 2)
+        formatted_sources = format_candidate_evidence_sources(candidate)
+        self.assertIn(
+            "[독립 근거 1 · 동일 공고] Saramin — https://www.saramin.co.kr",
+            formatted_sources,
+        )
+        self.assertIn(
+            "[독립 근거 1 · 동일 공고] JobKorea — https://www.jobkorea.co.kr",
+            formatted_sources,
+        )
+        self.assertIn(
+            "[독립 근거 2] Example Engineering — https://engineering.example",
+            formatted_sources,
+        )
+        self.assertEqual(
+            format_candidate_evidence_note(candidate),
+            "독립 근거: 2개 / 보존 URL: 3개\n"
+            "동일 공고 그룹: 독립 근거 1 (Saramin, JobKorea)",
+        )
+
+    def test_job_posting_requires_employer_name(self) -> None:
+        with self.assertRaisesRegex(
+            DiscoveryValidationError,
+            "verified employer name",
+        ):
+            EvidenceSource(
+                "Example Careers",
+                "https://careers.example/roles/agent-security",
+                date(2026, 9, 15),
+                source_type=EvidenceType.JOB_POSTING,
+                job_location="Seoul",
+                job_market=SOUTH_KOREA_JOB_MARKET,
             )
 
     def test_source_outside_search_period_is_rejected(self) -> None:
@@ -626,6 +766,7 @@ class RoleDiscoveryTests(unittest.TestCase):
                 "https://careers.example/roles/overseas",
                 date(2026, 9, 15),
                 source_type=EvidenceType.JOB_POSTING,
+                employer_name="Example Company",
                 job_location="McLean, Virginia",
                 job_market="United States",
             )

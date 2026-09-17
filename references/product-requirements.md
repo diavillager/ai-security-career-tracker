@@ -18,6 +18,7 @@ Role Discovery는 새로운 Role Name을 발견하고 새 직무만 Candidate로
 - MVP에서는 Reddit, Hacker News, 소셜 네트워크, 일반 포럼, 익명 게시물 같은 커뮤니티 출처를 제외합니다.
 - 원본 Published Date를 확인할 수 없는 자료는 제외합니다.
 - Experience Level은 직무명으로 추정하지 않고 공고에 명시된 근거를 사용해 신입, 경력, 신입·경력, 미확인 중 하나로 기록합니다.
+- Candidate에는 독립 근거가 2개 이상 필요합니다. 같은 회사의 같은 직무 공고가 여러 채용 플랫폼에 복제된 경우 URL이 달라도 하나로 셉니다.
 
 ## 언어 지침
 

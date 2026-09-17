@@ -25,7 +25,8 @@
 - 기존 Candidate, Approved, Rejected와 정규화된 Role Name이 같은 관찰 결과는 `existing_matches`로 반환합니다.
 - 같은 실행에서 발견한 새 직무를 추가 검색의 seed로 사용하지 않습니다.
 - Agent는 Candidate 여부를 확정하지 않습니다. 관찰 결과와 근거만 반환하며 최종 후보 검증은 부모 workflow의 `select_new_candidates`가 수행합니다.
-- `observations`에는 `key_responsibilities`와 `required_skills`를 각각 1개 이상 원문에서 확인하고, 서로 다른 원본 근거 URL 2개 이상을 확보한 항목만 넣습니다. 두 근거 중 하나 이상은 대한민국 `Job Posting`이어야 합니다.
+- `observations`에는 `key_responsibilities`와 `required_skills`를 각각 1개 이상 원문에서 확인하고, 독립된 근거 2개 이상을 확보한 항목만 넣습니다. 두 근거 중 하나 이상은 대한민국 `Job Posting`이어야 합니다.
+- 같은 회사의 같은 직무 공고가 여러 채용 플랫폼에 복제된 경우 URL이 달라도 하나의 독립 근거로 셉니다. 각 복제 URL은 보존하되 독립 근거 수를 늘리는 용도로 사용하지 않습니다.
 - 위 요건을 채우지 못한 항목은 값을 추측하거나 빈 목록으로 반환하지 않습니다. 확인한 공고 URL을 `exclusions`에 `other`로 기록합니다.
 
 ## 출력 계약
@@ -37,7 +38,7 @@
 - `sources_checked`: 확인한 원본 URL 수
 - `exclusions`: 제외한 각 URL과 `overseas`, `unclear_location`, `missing_published_date`, `outside_period`, `domain_mismatch`, `other` 중 하나인 사유
 - `observations`: 각 항목에 `role_name`, `suggested_category`, `description`, `key_responsibilities`, `required_skills`, `team_description`, `product_context`, `discovery_reason`, `experience_level`, `evidence_sources` 포함
-- `evidence_sources`: 각 항목에 `name`, `url`, `published_on`, `source_type`, Job Posting이면 `job_location`, `job_market` 포함
+- `evidence_sources`: 각 항목에 `name`, `url`, `published_on`, `source_type`, Job Posting이면 원문에서 확인한 `employer_name`, `job_location`, `job_market` 포함
 - `existing_matches`: `observed_role_name`, `existing_role_name`, `existing_status`
 - `blockers`: 누락 입력, 접근 실패, 상충 근거처럼 부모 workflow가 알아야 할 문제
 
