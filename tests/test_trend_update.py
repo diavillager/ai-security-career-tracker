@@ -45,6 +45,7 @@ def observation(
     domain: Category = Category.AI_SECURITY,
     job_location: str | None = None,
     job_market: str | None = None,
+    canonical_url: str | None = None,
 ) -> TrendObservation:
     return TrendObservation(
         title="Securing agentic AI systems",
@@ -58,6 +59,7 @@ def observation(
         domain=domain,
         job_location=job_location,
         job_market=job_market,
+        canonical_url=canonical_url,
     )
 
 
@@ -163,6 +165,78 @@ class TrendUpdateTests(unittest.TestCase):
 
         self.assertEqual(plan.trends, ())
         self.assertEqual(plan.skipped_existing_urls, (item.original_url,))
+
+    def test_tracking_variant_of_existing_url_is_skipped(self) -> None:
+        item = observation(
+            url=(
+                "https://research.example/ai-security-agents"
+                "?utm_source=search&id=42#summary"
+            )
+        )
+        plan = plan_trend_update(
+            (item,),
+            (APPROVED,),
+            ("https://RESEARCH.example/ai-security-agents?id=42",),
+            PERIOD,
+            date(2026, 9, 17),
+        )
+
+        self.assertEqual(plan.trends, ())
+        self.assertEqual(plan.skipped_existing_urls, (item.original_url,))
+
+    def test_duplicate_normalized_urls_in_same_result_are_rejected(self) -> None:
+        with self.assertRaisesRegex(TrendValidationError, "after normalization"):
+            plan_trend_update(
+                (
+                    observation(url="https://research.example/report?id=42"),
+                    observation(
+                        url=(
+                            "https://RESEARCH.example/report"
+                            "?utm_medium=email&id=42#top"
+                        )
+                    ),
+                ),
+                (APPROVED,),
+                (),
+                PERIOD,
+                date(2026, 9, 17),
+            )
+
+    def test_verified_canonical_url_is_stored_and_deduplicated(self) -> None:
+        canonical = "https://publisher.example/reports/agent-security"
+        item = observation(
+            url="https://aggregator.example/item/1",
+            canonical_url=canonical,
+        )
+        plan = plan_trend_update(
+            (item,),
+            (APPROVED,),
+            (),
+            PERIOD,
+            date(2026, 9, 17),
+        )
+
+        page = build_notion_trend_pages(plan)[0]
+
+        self.assertEqual(page.original_url, canonical)
+        self.assertEqual(page.properties["Original URL"], {"url": canonical})
+
+    def test_existing_precanonical_original_url_still_blocks_duplicate(self) -> None:
+        original = "https://aggregator.example/item/1?utm_source=search"
+        item = observation(
+            url=original,
+            canonical_url="https://publisher.example/reports/agent-security",
+        )
+
+        plan = plan_trend_update(
+            (item,),
+            (APPROVED,),
+            ("https://aggregator.example/item/1",),
+            PERIOD,
+            date(2026, 9, 17),
+        )
+
+        self.assertEqual(plan.trends, ())
 
     def test_duplicate_url_in_same_result_is_rejected(self) -> None:
         with self.assertRaisesRegex(TrendValidationError, "Duplicate URL"):

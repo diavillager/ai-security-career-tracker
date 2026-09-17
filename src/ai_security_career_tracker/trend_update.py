@@ -10,6 +10,12 @@ from enum import StrEnum
 from urllib.parse import urlsplit
 
 from .role_discovery import Category, DateRange, RoleStatus, normalize_role_name
+from .source_urls import (
+    SourceUrlError,
+    normalize_source_url,
+    preferred_source_url,
+    source_comparison_urls,
+)
 
 
 class TrendValidationError(ValueError):
@@ -91,6 +97,7 @@ class TrendObservation:
     domain: Category
     job_location: str | None = None
     job_market: str | None = None
+    canonical_url: str | None = None
 
     def __post_init__(self) -> None:
         required_text = (
@@ -115,6 +122,14 @@ class TrendObservation:
         if _is_blocked_source(parsed.hostname or ""):
             raise TrendValidationError(
                 f"Community and social sources are excluded: {self.original_url}"
+            )
+        try:
+            preferred = preferred_source_url(self.original_url, self.canonical_url)
+        except SourceUrlError as error:
+            raise TrendValidationError(str(error)) from error
+        if _is_blocked_source(urlsplit(preferred).hostname or ""):
+            raise TrendValidationError(
+                f"Community and social sources are excluded: {preferred}"
             )
         if self.source_type is TrendSourceType.JOB_POSTING:
             if not self.job_location or not self.job_location.strip():
@@ -239,7 +254,16 @@ def plan_trend_update(
         roles_by_name[normalized_name] = role
         role_ids.add(role.record_id)
 
-    existing = {url.strip() for url in existing_urls if url.strip()}
+    try:
+        existing = {
+            normalize_source_url(url)
+            for url in existing_urls
+            if isinstance(url, str) and url.strip()
+        }
+    except SourceUrlError as error:
+        raise TrendValidationError(
+            f"Existing Trends DB URL cannot be normalized: {error}"
+        ) from error
     seen_urls: set[str] = set()
     planned: list[PlannedTrend] = []
     skipped: list[str] = []
@@ -249,13 +273,21 @@ def plan_trend_update(
             raise TrendValidationError(
                 f"Trend source is outside the search period: {observation.original_url}"
             )
-        if observation.original_url in existing:
-            if observation.original_url not in skipped:
-                skipped.append(observation.original_url)
+        comparison_urls = source_comparison_urls(
+            observation.original_url,
+            observation.canonical_url,
+        )
+        stored_url = preferred_source_url(
+            observation.original_url,
+            observation.canonical_url,
+        )
+        if any(url in existing for url in comparison_urls):
+            if stored_url not in skipped:
+                skipped.append(stored_url)
             continue
-        if observation.original_url in seen_urls:
+        if any(url in seen_urls for url in comparison_urls):
             raise TrendValidationError(
-                f"Duplicate URL in one Trend Update result: {observation.original_url}"
+                f"Duplicate URL after normalization in one Trend Update result: {stored_url}"
             )
 
         related_roles: list[ApprovedRole] = []
@@ -285,7 +317,7 @@ def plan_trend_update(
                 collected_on=collected_on,
             )
         )
-        seen_urls.add(observation.original_url)
+        seen_urls.update(comparison_urls)
 
     return TrendUpdatePlan(
         trends=tuple(planned),
@@ -312,9 +344,17 @@ def build_notion_trend_pages(
     urls: set[str] = set()
     for planned in plan.trends:
         observation = planned.observation
-        if observation.original_url in urls:
+        comparison_urls = source_comparison_urls(
+            observation.original_url,
+            observation.canonical_url,
+        )
+        stored_url = preferred_source_url(
+            observation.original_url,
+            observation.canonical_url,
+        )
+        if any(url in urls for url in comparison_urls):
             raise TrendValidationError(
-                f"Duplicate planned trend URL: {observation.original_url}"
+                f"Duplicate planned trend URL: {stored_url}"
             )
         if not planned.related_role_ids or any(
             not record_id.strip() for record_id in planned.related_role_ids
@@ -335,7 +375,7 @@ def build_notion_trend_pages(
             "Key Insight": _rich_text(observation.key_insight),
             "Source Type": {"select": {"name": observation.source_type.value}},
             "Source Name": _rich_text(observation.source_name),
-            "Original URL": {"url": observation.original_url},
+            "Original URL": {"url": stored_url},
             "Published Date": {
                 "date": {"start": observation.published_on.isoformat()}
             },
@@ -350,11 +390,11 @@ def build_notion_trend_pages(
         pages.append(
             NotionTrendPage(
                 title=observation.title,
-                original_url=observation.original_url,
+                original_url=stored_url,
                 properties=properties,
             )
         )
-        urls.add(observation.original_url)
+        urls.update(comparison_urls)
     return tuple(pages)
 
 
@@ -461,6 +501,11 @@ def parse_trend_observations(
                     job_market=(
                         _text(observation.get("job_market"), "job_market")
                         if observation.get("job_market") is not None
+                        else None
+                    ),
+                    canonical_url=(
+                        _text(observation.get("canonical_url"), "canonical_url")
+                        if observation.get("canonical_url") is not None
                         else None
                     ),
                 )

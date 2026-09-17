@@ -20,6 +20,7 @@ Role Discovery는 새로운 Role Name을 발견하고 새 직무만 Candidate로
 - Experience Level은 직무명으로 추정하지 않고 공고에 명시된 근거를 사용해 신입, 경력, 신입·경력, 미확인 중 하나로 기록합니다.
 - Candidate에는 독립 근거가 2개 이상 필요합니다. 같은 회사의 같은 직무 공고가 여러 채용 플랫폼에 복제된 경우 URL이 달라도 하나로 셉니다.
 - Job Posting에는 원문의 정확한 `job_title`을 기록하며, 서로 다른 원문 직무명은 책임이 비슷해도 하나의 후보로 합치지 않습니다.
+- URL 중복 비교에서는 원본 URL을 보존한 채 scheme·host·기본 port·query 순서를 정규화하고 fragment와 알려진 추적 매개변수를 제거합니다. 원문에서 직접 확인한 canonical URL이 있으면 이를 우선하며, 서로 다른 URL의 의미 기반 중복은 자동 판정하지 않습니다.
 
 ## 언어 지침
 
