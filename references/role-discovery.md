@@ -74,8 +74,8 @@ Role Discovery는 대한민국 채용시장 조사입니다. 모든 후보에는
 - Key Responsibilities: 줄바꿈으로 구분한 책임
 - First Discovered: 실행일
 - Last Reviewed: 실행일
-- Evidence Sources: 줄바꿈으로 구분한 Source Name — Original URL
-- Notes: Job market: South Korea, 확인된 근무지, 간결한 발견 이유, 불확실한 점
+- Evidence Sources: `format_candidate_evidence_sources`가 만든 줄바꿈 목록. 모든 Source Name과 Original URL을 보존하고, 같은 공고 복제본에는 동일한 `독립 근거 N · 동일 공고` 표시를 붙입니다.
+- Notes: Job market: South Korea, 확인된 근무지, 간결한 발견 이유, 불확실한 점과 `format_candidate_evidence_note`가 만든 독립 근거 수·보존 URL 수·동일 공고 그룹 요약
 
 같은 실행에서 실행 전 Approved 직무 목록을 바꾸거나 Trend Update를 호출하거나 새 Candidate로 검색 범위를 넓히지 않습니다.
 

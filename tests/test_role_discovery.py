@@ -37,6 +37,9 @@ from ai_security_career_tracker.role_discovery import (
     build_search_plan,
     consolidate_agent_results,
     default_period,
+    format_candidate_evidence_note,
+    format_candidate_evidence_sources,
+    group_independent_evidence,
     normalize_role_name,
     parse_agent_discovery_result,
     parse_role_evidence_review_result,
@@ -52,10 +55,11 @@ def observation(
     include_supporting_source: bool = True,
     experience_level: ExperienceLevel = ExperienceLevel.EXPERIENCED,
     employer_name: str = "Example Company",
+    source_name: str = "Example Careers",
 ) -> RoleObservation:
     sources = [
         EvidenceSource(
-            "Example Careers",
+            source_name,
             source_url,
             date(2026, 9, 14),
             source_type=EvidenceType.JOB_POSTING,
@@ -646,6 +650,56 @@ class RoleDiscoveryTests(unittest.TestCase):
                 date(2026, 9, 15),
                 default_period(date(2026, 9, 15)),
             )
+
+    def test_candidate_keeps_every_mirror_url_and_labels_its_group(self) -> None:
+        outcome = select_new_candidates(
+            (
+                observation(
+                    role_name="AI Developer",
+                    source_name="Saramin",
+                    source_url="https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=1",
+                    employer_name="(주) Beyond Data",
+                ),
+                observation(
+                    role_name="AI Developer",
+                    source_name="JobKorea",
+                    source_url="https://www.jobkorea.co.kr/Recruit/GI_Read/1",
+                    include_supporting_source=False,
+                    employer_name="Beyond Data",
+                ),
+            ),
+            (),
+            date(2026, 9, 15),
+            default_period(date(2026, 9, 15)),
+        )
+
+        candidate = outcome.new_candidates[0]
+        groups = group_independent_evidence(
+            candidate.role_name,
+            candidate.evidence_sources,
+        )
+
+        self.assertEqual(len(candidate.evidence_sources), 3)
+        self.assertEqual(len(groups), 2)
+        self.assertEqual(len(groups[0]), 2)
+        formatted_sources = format_candidate_evidence_sources(candidate)
+        self.assertIn(
+            "[독립 근거 1 · 동일 공고] Saramin — https://www.saramin.co.kr",
+            formatted_sources,
+        )
+        self.assertIn(
+            "[독립 근거 1 · 동일 공고] JobKorea — https://www.jobkorea.co.kr",
+            formatted_sources,
+        )
+        self.assertIn(
+            "[독립 근거 2] Example Engineering — https://engineering.example",
+            formatted_sources,
+        )
+        self.assertEqual(
+            format_candidate_evidence_note(candidate),
+            "독립 근거: 2개 / 보존 URL: 3개\n"
+            "동일 공고 그룹: 독립 근거 1 (Saramin, JobKorea)",
+        )
 
     def test_job_posting_requires_employer_name(self) -> None:
         with self.assertRaisesRegex(

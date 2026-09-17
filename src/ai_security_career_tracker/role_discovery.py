@@ -475,6 +475,55 @@ def _independent_evidence_key(
     return ("informational", source.url)
 
 
+def group_independent_evidence(
+    role_name: str,
+    evidence_sources: tuple[EvidenceSource, ...],
+) -> tuple[tuple[EvidenceSource, ...], ...]:
+    """Keep every URL while grouping mirrors for independent-evidence counts."""
+    grouped: dict[tuple[str, ...], list[EvidenceSource]] = {}
+    for source in evidence_sources:
+        grouped.setdefault(
+            _independent_evidence_key(role_name, source),
+            [],
+        ).append(source)
+    return tuple(tuple(sources) for sources in grouped.values())
+
+
+def format_candidate_evidence_sources(candidate: CandidateRole) -> str:
+    """Format every retained URL with a visible independent-evidence group."""
+    lines: list[str] = []
+    for index, sources in enumerate(
+        group_independent_evidence(candidate.role_name, candidate.evidence_sources),
+        start=1,
+    ):
+        label = f"독립 근거 {index}"
+        if len(sources) > 1:
+            label += " · 동일 공고"
+        lines.extend(
+            f"[{label}] {source.name} — {source.url}" for source in sources
+        )
+    return "\n".join(lines)
+
+
+def format_candidate_evidence_note(candidate: CandidateRole) -> str:
+    """Summarize independent groups and retained URLs for the Notion Notes field."""
+    groups = group_independent_evidence(
+        candidate.role_name,
+        candidate.evidence_sources,
+    )
+    lines = [
+        f"독립 근거: {len(groups)}개 / 보존 URL: {len(candidate.evidence_sources)}개"
+    ]
+    mirrored_groups = [
+        f"독립 근거 {index} ({', '.join(source.name for source in sources)})"
+        for index, sources in enumerate(groups, start=1)
+        if len(sources) > 1
+    ]
+    if mirrored_groups:
+        lines.append(f"동일 공고 그룹: {'; '.join(mirrored_groups)}")
+    return "\n".join(lines)
+
+
 def select_new_candidates(
     observations: tuple[RoleObservation, ...],
     existing_roles: tuple[ExistingRole, ...],
@@ -526,12 +575,11 @@ def select_new_candidates(
             for source in item.evidence_sources:
                 evidence_by_url.setdefault(source.url, source)
 
-        independent_evidence = {
-            _independent_evidence_key(item.role_name, source)
-            for item in group
-            for source in item.evidence_sources
-        }
-        if len(independent_evidence) < 2:
+        evidence_groups = group_independent_evidence(
+            group[0].role_name,
+            tuple(evidence_by_url.values()),
+        )
+        if len(evidence_groups) < 2:
             raise DiscoveryValidationError(
                 f"At least two independent evidence sources are required for role: "
                 f"{group[0].role_name}"
