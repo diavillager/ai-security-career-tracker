@@ -115,6 +115,7 @@ class EvidenceSource:
     published_on: date
     source_type: EvidenceType = EvidenceType.INFORMATIONAL
     employer_name: str | None = None
+    job_title: str | None = None
     job_location: str | None = None
     job_market: str | None = None
 
@@ -134,6 +135,10 @@ class EvidenceSource:
             if not self.employer_name or not self.employer_name.strip():
                 raise DiscoveryValidationError(
                     "Every job posting needs a verified employer name."
+                )
+            if not self.job_title or not self.job_title.strip():
+                raise DiscoveryValidationError(
+                    "Every job posting needs the exact title from the source."
                 )
             if not self.job_location or not self.job_location.strip():
                 raise DiscoveryValidationError(
@@ -183,6 +188,19 @@ class RoleObservation:
             raise DiscoveryValidationError("At least one required skill is required.")
         if not self.evidence_sources:
             raise DiscoveryValidationError("At least one evidence source is required.")
+        mismatched_titles = tuple(
+            source.job_title
+            for source in self.evidence_sources
+            if source.source_type is EvidenceType.JOB_POSTING
+            and normalize_role_name(source.job_title or "")
+            != normalize_role_name(self.role_name)
+        )
+        if mismatched_titles:
+            raise DiscoveryValidationError(
+                "Every job posting title must match the observation role name "
+                "without semantic merging. Mismatched titles: "
+                + ", ".join(mismatched_titles)
+            )
 
 
 @dataclass(frozen=True)
@@ -470,7 +488,7 @@ def _independent_evidence_key(
         return (
             "job_posting",
             _normalize_employer_name(source.employer_name or ""),
-            normalize_role_name(role_name),
+            normalize_role_name(source.job_title or role_name),
         )
     return ("informational", source.url)
 
@@ -690,6 +708,11 @@ def parse_agent_discovery_result(
                         employer_name=(
                             _string(source.get("employer_name"), "employer_name")
                             if source.get("employer_name") is not None
+                            else None
+                        ),
+                        job_title=(
+                            _string(source.get("job_title"), "job_title")
+                            if source.get("job_title") is not None
                             else None
                         ),
                         job_location=(

@@ -53,6 +53,8 @@ AI, Security, AI × Security 영역의 새로운 직무를 발견하고, 사용�
 
 Candidate 판정에는 독립 근거가 2개 이상 필요합니다. 같은 회사의 같은 직무 공고가 여러 채용 플랫폼에 복제된 경우 URL이 달라도 하나로 계산하며, 확인한 원본 URL은 검토를 위해 모두 보존합니다.
 
+각 Job Posting은 원문에 표시된 정확한 `job_title`을 포함해야 합니다. Python은 이 값이 observation의 Role Name과 정규화 후 같은지 검사하며, 책임이 비슷해도 서로 다른 원문 직무명을 하나의 Candidate로 합치는 결과를 거부합니다.
+
 Notion의 `Evidence Sources`에는 `[독립 근거 1 · 동일 공고] Source Name — Original URL` 형식으로 복제본을 포함한 모든 URL을 기록합니다. `Notes`에는 독립 근거 수와 보존 URL 수를 따로 표시합니다.
 
 Candidate 승인·거절은 사용자가 대상과 결정을 명시한 뒤에만 실행합니다. Python이 전체 요청을 먼저 검증하고 정확한 Notion 속성 변경을 만든 다음, 확인된 Roles DB의 `Status`, `Last Reviewed`와 필요한 `Notes`만 갱신합니다. 중간 실패가 발생하면 성공한 page와 실패한 page를 구분해 보고하고 데이터베이스를 다시 조회합니다.
