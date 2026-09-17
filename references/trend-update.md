@@ -7,7 +7,7 @@ Trend Update는 실행을 시작할 때 `Approved`인 직무만 기준으로 최
 1. 연결된 Notion workspace, 프로젝트 페이지, Roles DB와 Trends DB가 `config.toml`의 식별자 및 필수 구조와 일치하는지 확인합니다.
 2. Roles DB의 page ID, `Role Name`, `Category`, `Status`를 한 번 조회합니다.
 3. Python `select_approved_roles`로 `Approved` 직무 snapshot을 확정합니다. `Candidate`와 `Rejected`는 검색과 `Related Roles` 연결에서 제외합니다.
-4. Trends DB에서 기존 `Original URL`을 조회해 정확히 같은 URL을 확인합니다.
+4. Trends DB에서 기존 `Original URL`을 조회해 정규화된 비교 키를 만듭니다.
 5. 기간이 없으면 오늘을 마지막 날로 하는 최근 7일을 사용합니다.
 
 `Approved` 직무가 없으면 검색하거나 Trends DB에 쓰지 않고 결과를 그대로 보고합니다.
@@ -19,7 +19,7 @@ Trend Update는 실행을 시작할 때 `Approved`인 직무만 기준으로 최
 3. Reddit, Hacker News, 소셜 네트워크, 일반 포럼과 익명 게시물은 제외합니다.
 4. 원문에서 `Published Date`를 확인할 수 없거나 검색 기간 밖이면 제외합니다. 검색엔진 표시일이나 접속일을 게시일로 대신하지 않습니다.
 5. Job Posting을 사용하는 경우 공고 원문에서 근무지가 대한민국임을 확인합니다. 근무지가 해외이거나 불명확하면 제외합니다.
-6. 제목, 요약, 해당 직무에 중요한 이유, 출처 유형·이름, `Original URL`, 게시일, 관련 직무와 영역을 구조화합니다.
+6. 제목, 요약, 해당 직무에 중요한 이유, 출처 유형·이름, `Original URL`, 게시일, 관련 직무와 영역을 구조화합니다. 원문에서 `<link rel="canonical">`을 직접 확인한 경우에만 선택적인 `canonical_url`을 기록합니다.
 
 구조화된 결과는 `parse_trend_observations`를 통과해야 합니다. 검색 결과의 설명이나 요약 페이지가 아니라 실제 원문 URL을 보존합니다.
 
@@ -29,10 +29,11 @@ Trend Update는 실행을 시작할 때 `Approved`인 직무만 기준으로 최
 2. `Related Roles`에 포함된 모든 직무가 실행 시작 snapshot에서 `Approved`였는지 확인합니다.
 3. `Domain`이 관련 직무 중 하나의 `Category`와 일치하는지 확인합니다.
 4. 기간, 출처 종류, 커뮤니티 제외와 대한민국 Job Posting 조건을 검사합니다.
-5. Trends DB에 정확히 같은 `Original URL`이 있으면 새 page를 만들지 않고 건너뛴 URL로 보고합니다.
-6. 한 실행 결과 안에 같은 URL이 두 번 있으면 자동으로 하나를 고르지 않고 오류로 처리합니다.
+5. `normalize_source_url`로 scheme·host·기본 port·query 순서를 정리하고 fragment와 알려진 추적 매개변수를 비교 키에서 제거합니다. 원문에서 확인한 canonical URL이 있으면 비교 키와 저장 URL에 우선 사용합니다.
+6. Trends DB에 정규화 후 같은 `Original URL`이 있으면 새 page를 만들지 않고 건너뛴 URL로 보고합니다.
+7. 한 실행 결과 안에 정규화 후 같은 URL이 두 번 있으면 자동으로 하나를 고르지 않고 오류로 처리합니다.
 
-MVP의 이 단계에서는 URL 문자열의 정확한 일치만 확인합니다. 추적 매개변수 제거, canonical URL 처리와 의미 기반 이벤트 중복 판정은 수행하지 않습니다.
+정규화는 비교에 필요한 최소 범위만 적용합니다. 원본 URL은 임의로 다시 쓰지 않으며, 경로·의미 있는 query 값·`http`와 `https`·서로 다른 host는 합치지 않습니다. 제목이나 내용이 비슷한 서로 다른 URL의 의미 기반 이벤트 중복 판정은 MVP 범위에서 수행하지 않습니다.
 
 ## Notion 필드 연결
 
@@ -43,7 +44,7 @@ MVP의 이 단계에서는 URL 문자열의 정확한 일치만 확인합니다.
 - Key Insight: 연결된 직무에 중요한 이유
 - Source Type: Job Posting, Report, Article, Research, Official 중 하나
 - Source Name: 발행자 또는 기관
-- Original URL: 원문 URL
+- Original URL: 원문에서 직접 확인한 canonical URL이 있으면 그 URL, 없으면 확인한 원본 URL
 - Published Date: 원문에서 확인한 게시일
 - Collected Date: 실행일
 - Related Roles: 실행 시작 시점에 Approved였던 Roles DB page relation

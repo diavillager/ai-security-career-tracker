@@ -44,11 +44,13 @@ AI, Security, AI × Security 영역의 새로운 직무를 발견하고, 사용�
 - `src/ai_security_career_tracker/role_discovery.py`: 세 영역 검색 계획과 신규 Candidate 판정 도구
 - `src/ai_security_career_tracker/candidate_review.py`: Candidate 승인·거절 계획과 Notion 속성 적용 도구
 - `src/ai_security_career_tracker/trend_update.py`: Approved 직무 검색 계획, 동향 검증과 Trends DB 속성 적용 도구
+- `src/ai_security_career_tracker/source_urls.py`: 원본을 보존하는 URL 비교 키와 canonical URL 검증 도구
 - `tests/test_foundation.py`: 기본 구조와 설정 검증
 - `tests/test_role_discovery.py`: 검색 기간, 중복 차단, 다중 출처 및 Candidate 상태 검증
 - `tests/test_role_discovery_agent.py`: Agent 설정과 역할 경계 검증
 - `tests/test_candidate_review.py`: 승인·거절 계획, Notion 속성 연결과 쓰기 실패 검증
 - `tests/test_trend_update.py`: Approved snapshot, 출처·기간·URL 검증과 Trends DB 쓰기 실패 검증
+- `tests/test_source_urls.py`: 추적 매개변수, fragment, query 순서와 canonical URL 정규화 검증
 
 실제 Notion 데이터베이스 식별자는 Git에 올라가지 않는 `config.toml`에 저장합니다. 두 식별자 중 하나만 있거나 기존 값과 다른 값으로 바꾸려 하면 도구가 중단됩니다.
 
@@ -62,7 +64,7 @@ Notion의 `Evidence Sources`에는 `[독립 근거 1 · 동일 공고] Source Na
 
 Candidate 승인·거절은 사용자가 대상과 결정을 명시한 뒤에만 실행합니다. Python이 전체 요청을 먼저 검증하고 정확한 Notion 속성 변경을 만든 다음, 확인된 Roles DB의 `Status`, `Last Reviewed`와 필요한 `Notes`만 갱신합니다. 중간 실패가 발생하면 성공한 page와 실패한 page를 구분해 보고하고 데이터베이스를 다시 조회합니다.
 
-Trend Update는 실행 시작 시점에 `Approved`인 직무만 검색합니다. 비채용 동향은 해외 출처도 허용하지만 커뮤니티와 소셜 출처는 제외하며, Job Posting은 대한민국 근무지가 확인된 경우만 사용합니다. 게시일·Related Roles·Domain을 모두 검증하고 Trends DB에 정확히 같은 `Original URL`이 있으면 다시 저장하지 않습니다. 실제 Notion 쓰기 직전에 새 항목을 보여주고 확인을 받습니다.
+Trend Update는 실행 시작 시점에 `Approved`인 직무만 검색합니다. 비채용 동향은 해외 출처도 허용하지만 커뮤니티와 소셜 출처는 제외하며, Job Posting은 대한민국 근무지가 확인된 경우만 사용합니다. 게시일·Related Roles·Domain을 모두 검증하고, 추적 매개변수와 fragment를 제거한 비교 키 또는 원문에서 확인한 canonical URL이 Trends DB의 기존 `Original URL`과 같으면 다시 저장하지 않습니다. 실제 Notion 쓰기 직전에 새 항목을 보여주고 확인을 받습니다.
 
 ## 테스트
 

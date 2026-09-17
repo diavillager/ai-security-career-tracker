@@ -23,7 +23,7 @@ agent, tool use, RAG, evaluation, model serving, orchestration, observability, I
 
 부모 workflow는 [role-discovery-agent-contract.md](role-discovery-agent-contract.md)에 따라 AI는 `ai_role_researcher`, Security는 `security_role_researcher`, AI × Security는 `ai_security_role_researcher`에 동시에 위임합니다. 세 Agent는 같은 `run_id`, 검색 기간, 대한민국 채용시장, 기존 Roles DB snapshot을 사용합니다.
 
-각 Agent는 할당된 영역의 조사와 원본 근거 정리만 담당합니다. 세 영역 결과가 모두 성공한 뒤 부모 workflow가 URL 중복을 제거하고, 같은 회사의 같은 직무 공고 복제본을 하나의 독립 근거로 묶은 다음 Python 검증으로 Candidate 요건을 판정합니다. 영역 하나가 실패하거나 누락되면 나머지 결과만으로 전체 조사가 끝났다고 보고하거나 Candidate를 저장하지 않습니다. 같은 Role Name이 서로 다른 Category로 반환되면 자동 선택하지 않고 검토가 필요한 충돌로 처리합니다.
+각 Agent는 할당된 영역의 조사와 원본 근거 정리만 담당합니다. 세 영역 결과가 모두 성공한 뒤 부모 workflow가 비교용 URL을 정규화하고, 같은 회사의 같은 직무 공고 복제본을 하나의 독립 근거로 묶은 다음 Python 검증으로 Candidate 요건을 판정합니다. 영역 하나가 실패하거나 누락되면 나머지 결과만으로 전체 조사가 끝났다고 보고하거나 Candidate를 저장하지 않습니다. 같은 Role Name이 서로 다른 Category로 반환되면 자동 선택하지 않고 검토가 필요한 충돌로 처리합니다.
 
 세 응답이 `parse_agent_discovery_result`를 통과하면 [role-evidence-reviewer-contract.md](role-evidence-reviewer-contract.md)에 따라 `role_evidence_reviewer`를 순차 실행합니다. 검토 Agent는 반환된 근거 URL의 접근성, 같은 공고 복제본 여부, 출처 충돌, 의미 중복과 Category 모호성을 표시합니다. `flagged` 결과는 Candidate를 자동 승인하거나 거절하지 않으며, 최종 보고에서 사용자가 확인할 항목으로 함께 보여줍니다.
 
@@ -76,7 +76,7 @@ Role Discovery는 대한민국 채용시장 조사입니다. 모든 후보에는
 - Key Responsibilities: 줄바꿈으로 구분한 책임
 - First Discovered: 실행일
 - Last Reviewed: 실행일
-- Evidence Sources: `format_candidate_evidence_sources`가 만든 줄바꿈 목록. 모든 Source Name과 Original URL을 보존하고, 같은 공고 복제본에는 동일한 `독립 근거 N · 동일 공고` 표시를 붙입니다.
+- Evidence Sources: `format_candidate_evidence_sources`가 만든 줄바꿈 목록. 모든 Source Name과 Original URL을 보존하고, 원문에서 직접 확인한 canonical URL이 있으면 함께 표시합니다. 같은 공고 복제본과 정규화 후 같은 정보 출처에는 동일한 독립 근거 번호를 붙입니다.
 - Notes: Job market: South Korea, 확인된 근무지, 간결한 발견 이유, 불확실한 점과 `format_candidate_evidence_note`가 만든 독립 근거 수·보존 URL 수·동일 공고 그룹 요약
 
 같은 실행에서 실행 전 Approved 직무 목록을 바꾸거나 Trend Update를 호출하거나 새 Candidate로 검색 범위를 넓히지 않습니다.

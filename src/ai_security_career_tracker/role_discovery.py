@@ -11,6 +11,8 @@ from datetime import date, timedelta
 from enum import StrEnum
 from urllib.parse import urlsplit
 
+from .source_urls import SourceUrlError, source_comparison_url
+
 
 class DiscoveryValidationError(ValueError):
     """Raised when a proposed role lacks safe, consistent evidence."""
@@ -118,6 +120,7 @@ class EvidenceSource:
     job_title: str | None = None
     job_location: str | None = None
     job_market: str | None = None
+    canonical_url: str | None = None
 
     def __post_init__(self) -> None:
         parsed = urlsplit(self.url)
@@ -131,6 +134,10 @@ class EvidenceSource:
                 "Every evidence source needs a name, an original HTTP or HTTPS URL, "
                 "and a verified published date."
             )
+        try:
+            source_comparison_url(self.url, self.canonical_url)
+        except SourceUrlError as error:
+            raise DiscoveryValidationError(str(error)) from error
         if self.source_type is EvidenceType.JOB_POSTING:
             if not self.employer_name or not self.employer_name.strip():
                 raise DiscoveryValidationError(
@@ -490,7 +497,10 @@ def _independent_evidence_key(
             _normalize_employer_name(source.employer_name or ""),
             normalize_role_name(source.job_title or role_name),
         )
-    return ("informational", source.url)
+    return (
+        "informational",
+        source_comparison_url(source.url, source.canonical_url),
+    )
 
 
 def group_independent_evidence(
@@ -516,10 +526,19 @@ def format_candidate_evidence_sources(candidate: CandidateRole) -> str:
     ):
         label = f"독립 근거 {index}"
         if len(sources) > 1:
-            label += " · 동일 공고"
-        lines.extend(
-            f"[{label}] {source.name} — {source.url}" for source in sources
-        )
+            if all(
+                source.source_type is EvidenceType.JOB_POSTING for source in sources
+            ):
+                label += " · 동일 공고"
+            else:
+                label += " · 동일 원문"
+        for source in sources:
+            canonical = (
+                f" · Canonical: {source.canonical_url}"
+                if source.canonical_url and source.canonical_url != source.url
+                else ""
+            )
+            lines.append(f"[{label}] {source.name} — {source.url}{canonical}")
     return "\n".join(lines)
 
 
@@ -532,13 +551,22 @@ def format_candidate_evidence_note(candidate: CandidateRole) -> str:
     lines = [
         f"독립 근거: {len(groups)}개 / 보존 URL: {len(candidate.evidence_sources)}개"
     ]
-    mirrored_groups = [
+    mirrored_job_groups = [
         f"독립 근거 {index} ({', '.join(source.name for source in sources)})"
         for index, sources in enumerate(groups, start=1)
         if len(sources) > 1
+        and all(source.source_type is EvidenceType.JOB_POSTING for source in sources)
     ]
-    if mirrored_groups:
-        lines.append(f"동일 공고 그룹: {'; '.join(mirrored_groups)}")
+    mirrored_source_groups = [
+        f"독립 근거 {index} ({', '.join(source.name for source in sources)})"
+        for index, sources in enumerate(groups, start=1)
+        if len(sources) > 1
+        and not all(source.source_type is EvidenceType.JOB_POSTING for source in sources)
+    ]
+    if mirrored_job_groups:
+        lines.append(f"동일 공고 그룹: {'; '.join(mirrored_job_groups)}")
+    if mirrored_source_groups:
+        lines.append(f"동일 원문 그룹: {'; '.join(mirrored_source_groups)}")
     return "\n".join(lines)
 
 
@@ -723,6 +751,11 @@ def parse_agent_discovery_result(
                         job_market=(
                             _string(source.get("job_market"), "source job_market")
                             if source.get("job_market") is not None
+                            else None
+                        ),
+                        canonical_url=(
+                            _string(source.get("canonical_url"), "canonical_url")
+                            if source.get("canonical_url") is not None
                             else None
                         ),
                     )

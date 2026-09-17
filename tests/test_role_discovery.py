@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from ai_security_career_tracker.role_discovery import (
     AgentDiscoveryResult,
     AgentExclusion,
+    CandidateRole,
     Category,
     DiscoveryValidationError,
     EvidenceType,
@@ -705,6 +706,112 @@ class RoleDiscoveryTests(unittest.TestCase):
             format_candidate_evidence_note(candidate),
             "독립 근거: 2개 / 보존 URL: 3개\n"
             "동일 공고 그룹: 독립 근거 1 (Saramin, JobKorea)",
+        )
+
+    def test_tracking_variants_of_informational_url_count_as_one_source(self) -> None:
+        sources = (
+            EvidenceSource(
+                "Example Research",
+                "https://research.example/report?id=42&utm_source=search",
+                date(2026, 9, 15),
+            ),
+            EvidenceSource(
+                "Example Research",
+                "https://RESEARCH.example/report?utm_medium=email&id=42#summary",
+                date(2026, 9, 15),
+            ),
+        )
+
+        groups = group_independent_evidence("AI Security Engineer", sources)
+
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(len(groups[0]), 2)
+        candidate = CandidateRole(
+            role_name="AI Security Engineer",
+            category=Category.AI_SECURITY,
+            experience_level=ExperienceLevel.EXPERIENCED,
+            description="Secures AI systems.",
+            key_responsibilities=("Review controls",),
+            discovery_reasons=("New responsibility",),
+            evidence_sources=sources,
+            job_locations=("Seoul",),
+            job_market=SOUTH_KOREA_JOB_MARKET,
+            first_discovered=date(2026, 9, 15),
+            last_reviewed=date(2026, 9, 15),
+        )
+        self.assertIn("동일 원문", format_candidate_evidence_sources(candidate))
+        self.assertIn("동일 원문 그룹", format_candidate_evidence_note(candidate))
+
+    def test_verified_canonical_url_groups_informational_mirrors(self) -> None:
+        canonical = "https://publisher.example/reports/agent-security"
+        sources = (
+            EvidenceSource(
+                "Search Result",
+                "https://search.example/result/1",
+                date(2026, 9, 15),
+                canonical_url=canonical,
+            ),
+            EvidenceSource(
+                "Publisher",
+                canonical,
+                date(2026, 9, 15),
+            ),
+        )
+
+        groups = group_independent_evidence("AI Security Engineer", sources)
+
+        self.assertEqual(len(groups), 1)
+
+    def test_agent_payload_preserves_verified_canonical_url(self) -> None:
+        payload = {
+            "run_id": "run-1",
+            "agent_name": "ai_security_role_researcher",
+            "category": "AI × Security",
+            "search_period": {"start": "2026-09-09", "end": "2026-09-15"},
+            "job_market": SOUTH_KOREA_JOB_MARKET,
+            "sources_checked": 2,
+            "observations": [
+                {
+                    "role_name": "Agent Security Engineer",
+                    "suggested_category": "AI × Security",
+                    "description": "Agent security role",
+                    "key_responsibilities": ["Secure tools"],
+                    "required_skills": ["Threat modeling"],
+                    "team_description": "Security team",
+                    "product_context": "Agent platform",
+                    "discovery_reason": "Agent security responsibility",
+                    "experience_level": "경력",
+                    "evidence_sources": [
+                        {
+                            "name": "Example Careers",
+                            "url": "https://jobs.example/agent-security?utm_source=search",
+                            "canonical_url": "https://jobs.example/agent-security",
+                            "published_on": "2026-09-14",
+                            "source_type": "Job Posting",
+                            "employer_name": "Example Company",
+                            "job_title": "Agent Security Engineer",
+                            "job_location": "Seoul",
+                            "job_market": "South Korea",
+                        },
+                        {
+                            "name": "Example Research",
+                            "url": "https://research.example/agent-security",
+                            "published_on": "2026-09-15",
+                            "source_type": "Informational",
+                        },
+                    ],
+                }
+            ],
+            "exclusions": [],
+            "existing_matches": [],
+            "blockers": [],
+        }
+
+        result = parse_agent_discovery_result(payload)
+
+        self.assertEqual(
+            result.observations[0].evidence_sources[0].canonical_url,
+            "https://jobs.example/agent-security",
         )
 
     def test_job_posting_requires_employer_name(self) -> None:
