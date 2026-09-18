@@ -223,7 +223,7 @@ class TrendUpdateTests(unittest.TestCase):
         page = build_notion_trend_pages(plan)[0]
 
         self.assertEqual(page.original_url, canonical)
-        self.assertEqual(page.properties["Original URL"], {"url": canonical})
+        self.assertEqual(page.properties["원문 URL"], {"url": canonical})
 
     def test_existing_precanonical_original_url_still_blocks_duplicate(self) -> None:
         original = "https://aggregator.example/item/1?utm_source=search"
@@ -323,24 +323,24 @@ class TrendUpdateTests(unittest.TestCase):
         self.assertEqual(
             set(page.properties),
             {
-                "Title",
-                "Summary",
-                "Key Insight",
-                "Source Type",
-                "Source Name",
-                "Original URL",
-                "Published Date",
-                "Collected Date",
-                "Related Roles",
-                "Domain",
+                "제목",
+                "요약",
+                "핵심 시사점",
+                "출처 유형",
+                "출처명",
+                "원문 URL",
+                "게시일",
+                "수집일",
+                "관련 직무",
+                "관련 분야",
             },
         )
         self.assertEqual(
-            page.properties["Related Roles"],
+            page.properties["관련 직무"],
             {"relation": [{"id": "role-1"}]},
         )
         self.assertEqual(
-            page.properties["Domain"],
+            page.properties["관련 분야"],
             {"multi_select": [{"name": "AI × Security"}]},
         )
 
@@ -367,11 +367,11 @@ class TrendUpdateTests(unittest.TestCase):
         properties = build_notion_trend_pages(plan)[0].properties
 
         self.assertEqual(
-            properties["Related Roles"],
+            properties["관련 직무"],
             {"relation": [{"id": "role-ai"}, {"id": "role-security"}]},
         )
         self.assertEqual(
-            properties["Domain"],
+            properties["관련 분야"],
             {
                 "multi_select": [
                     {"name": "AI"},
@@ -393,7 +393,7 @@ class TrendUpdateTests(unittest.TestCase):
         calls: list[str] = []
 
         def fail_second(properties: dict[str, object]) -> None:
-            url = properties["Original URL"]["url"]  # type: ignore[index]
+            url = properties["원문 URL"]["url"]  # type: ignore[index]
             calls.append(url)
             if url == second.original_url:
                 raise RuntimeError("Notion write failed")
@@ -476,9 +476,9 @@ class TrendUpdateTests(unittest.TestCase):
                 self.assertIn(requirement, skill)
         for requirement in (
             "Approved",
-            "Published Date",
-            "Original URL",
-            "Related Roles",
+            "게시일",
+            "원문 URL",
+            "관련 직무",
             "TrendApplyError",
         ):
             with self.subTest(reference_requirement=requirement):

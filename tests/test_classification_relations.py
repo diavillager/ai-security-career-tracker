@@ -39,12 +39,12 @@ class ClassificationRelationTests(unittest.TestCase):
             "Multi-select",
             "Approved",
             "제목 exact match만",
-            "Summary",
-            "Key Insight",
+            "요약",
+            "핵심 시사점",
         ):
             with self.subTest(requirement=requirement):
                 self.assertIn(requirement, reference)
-        self.assertIn("| Domain | Multi-select |", database_reference)
+        self.assertIn("| 관련 분야 | Multi-select |", database_reference)
 
     def test_every_prd_source_type_is_supported(self) -> None:
         self.assertEqual(

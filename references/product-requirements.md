@@ -27,16 +27,16 @@ Role Discovery는 새로운 Role Name을 발견하고 새 직무만 Candidate로
 - PR 제목·설명·검토 코멘트는 한국어로 작성합니다.
 - 커밋 메시지는 feat:, fix:, docs:, test: 같은 영어 유형 뒤에 한국어 설명을 작성합니다.
 - SKILL.md와 사용자가 읽는 참고 문서는 한국어로 작성합니다.
-- Skill 이름, 기능명, Notion 속성·상태값, 브랜치명, 코드 식별자, 설정 키, 명령어는 영어로 유지합니다.
+- Skill 이름, 기능명, Notion 상태값, 브랜치명, 코드 식별자, 설정 키, 명령어는 영어로 유지합니다. Notion 속성명은 한글로 표시합니다.
 - 과거 커밋과 병합된 PR의 기록은 다시 작성하지 않고, 이 지침을 반영한 이후의 작업부터 적용합니다.
 
 ## Notion 구조
 
 확인된 프로젝트 페이지 아래에 Roles DB와 Trends DB를 각각 하나씩 만듭니다. 처음 만든 뒤 식별자를 저장해 재사용합니다. 저장된 식별자를 찾을 수 없다는 이유만으로 중복 데이터베이스를 만들지 않습니다.
 
-Roles DB는 Role Name, Category, Status, Experience Level, Description, Key Responsibilities, First Discovered, Last Reviewed, Evidence Sources, Notes를 지원해야 합니다.
+Roles DB는 `직무명`, `직무 분야`, `상태`, `경력 수준`, `직무 설명`, `주요 업무`, `최초 발견일`, `최근 검토일`, `근거 출처`, `메모`를 지원해야 합니다.
 
-Trends DB는 Title, Summary, Key Insight, Source Type, Source Name, Original URL, Published Date, Collected Date, Related Roles, Domain을 지원해야 합니다. Domain은 AI, Security, AI × Security를 하나 이상 담는 Multi-select이며 Related Roles는 Approved 직무 여러 개를 연결할 수 있는 Relation입니다.
+Trends DB는 `제목`, `요약`, `핵심 시사점`, `출처 유형`, `출처명`, `원문 URL`, `게시일`, `수집일`, `관련 직무`, `관련 분야`를 지원해야 합니다. `관련 분야`는 AI, Security, AI × Security를 하나 이상 담는 Multi-select이며 `관련 직무`는 Approved 직무 여러 개를 연결할 수 있는 Relation입니다.
 
 ## 구현 순서
 
