@@ -266,7 +266,7 @@ class CandidateReviewTests(unittest.TestCase):
         self.assertEqual(
             updates[0].properties,
             {
-                "상태": {"select": {"name": "Rejected"}},
+                "상태": {"select": {"name": "거절"}},
                 "최근 검토일": {"date": {"start": "2026-09-16"}},
                 "메모": {
                     "rich_text": [
@@ -299,7 +299,7 @@ class CandidateReviewTests(unittest.TestCase):
 
         properties = build_notion_role_updates(plan)[0].properties
 
-        self.assertEqual(properties["상태"], {"select": {"name": "Approved"}})
+        self.assertEqual(properties["상태"], {"select": {"name": "승인"}})
         self.assertNotIn("메모", properties)
 
     def test_apply_candidate_review_plan_updates_every_planned_record(self) -> None:

@@ -343,6 +343,10 @@ class TrendUpdateTests(unittest.TestCase):
             page.properties["관련 분야"],
             {"multi_select": [{"name": "AI × Security"}]},
         )
+        self.assertEqual(
+            page.properties["출처 유형"],
+            {"select": {"name": "연구 보고서"}},
+        )
 
     def test_multiple_domains_and_related_roles_are_written(self) -> None:
         ai_role = ApprovedRole("role-ai", "AI Engineer", Category.AI)

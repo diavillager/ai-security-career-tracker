@@ -57,6 +57,8 @@ MVP의 Role Discovery, Candidate 승인·거절과 Trend Update를 구현했습�
 
 실제 Notion 데이터베이스 식별자는 Git에 올라가지 않는 `config.toml`에 저장합니다. 두 식별자 중 하나만 있거나 기존 값과 다른 값으로 바꾸려 하면 도구가 중단됩니다.
 
+Notion 속성명과 사용자에게 보이는 옵션은 한글로 저장합니다. 분류 기준과 Agent 계약에 쓰는 내부 enum은 영어로 유지하며, `AI`, `Security`, `AI × Security`, `GitHub` 옵션은 원문을 유지합니다.
+
 세 Role Discovery 조사 Agent는 각 영역의 웹 검색과 근거 정리만 병렬로 담당합니다. 부모 Skill이 동일한 기간과 기존 직무 snapshot을 제공하고, 세 결과가 모두 구조 검사를 통과하면 `role_evidence_reviewer`가 출처 접근성·독립성, 의미 중복과 분류 모호성을 순차 검토합니다. 그 뒤 Python 검증으로 Candidate 초안을 판정합니다. 어떤 Agent도 Notion 저장, Candidate 승인·거절, Trend Update를 수행하지 않습니다.
 
 Candidate 판정에는 독립 근거가 2개 이상 필요합니다. 같은 회사의 같은 직무 공고가 여러 채용 플랫폼에 복제된 경우 URL이 달라도 하나로 계산하며, 확인한 원본 URL은 검토를 위해 모두 보존합니다.

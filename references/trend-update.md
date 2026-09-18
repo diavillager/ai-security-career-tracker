@@ -45,7 +45,7 @@ Trend Update는 실행을 시작할 때 `Approved`인 직무만 기준으로 최
 - `제목`: 원문 제목
 - `요약`: 원문의 간결한 요약
 - `핵심 시사점`: 연결된 직무에 중요한 이유
-- `출처 유형`: News, Industry Media, Company Blog, Engineering Blog, Press Release, Job Posting, Official Documentation, Research Report, Newsletter, GitHub, Paper, Conference, Government, Other 중 하나
+- `출처 유형`: 뉴스, 업계 매체, 기업 블로그, 기술 블로그, 보도자료, 채용 공고, 공식 문서, 연구 보고서, 뉴스레터, GitHub, 논문, 컨퍼런스, 정부, 기타 중 하나. Agent 계약과 내부 enum은 대응하는 영어 값을 유지합니다.
 - `출처명`: 발행자 또는 기관
 - `원문 URL`: 원문에서 직접 확인한 canonical URL이 있으면 그 URL, 없으면 확인한 원본 URL
 - `게시일`: 원문에서 확인한 게시일

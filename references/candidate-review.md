@@ -1,6 +1,6 @@
 # Candidate 승인·거절
 
-이 절차는 Roles DB에 이미 저장된 `Candidate`를 사용자의 명시적 결정에 따라 `Approved` 또는 `Rejected`로 변경할 때만 사용합니다.
+이 절차는 Roles DB의 `상태`가 `후보`인 항목을 사용자의 명시적 결정에 따라 `승인` 또는 `거절`로 변경할 때만 사용합니다. Python 내부에서는 각각 `Candidate`, `Approved`, `Rejected` enum을 유지합니다.
 
 ## 자연어 요청 해석
 
@@ -25,7 +25,7 @@
 
 | ReviewAction 값 | Roles DB 속성 |
 | --- | --- |
-| `target_status` | `상태`의 `Approved` 또는 `Rejected` |
+| `target_status` | 내부 `Approved` 또는 `Rejected`를 `상태`의 `승인` 또는 `거절`로 변환 |
 | `reviewed_on` | `최근 검토일` |
 | 비어 있지 않은 `note` | `메모` |
 

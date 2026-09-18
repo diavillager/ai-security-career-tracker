@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Callable
 
+from .notion_options import notion_role_status_name
 from .notion_properties import ROLE_LAST_REVIEWED, ROLE_NOTES, ROLE_STATUS
 from .role_discovery import RoleStatus, normalize_role_name
 
@@ -219,7 +220,9 @@ def build_notion_role_updates(
             )
 
         properties: dict[str, object] = {
-            ROLE_STATUS: {"select": {"name": action.target_status.value}},
+            ROLE_STATUS: {
+                "select": {"name": notion_role_status_name(action.target_status)}
+            },
             ROLE_LAST_REVIEWED: {
                 "date": {"start": action.reviewed_on.isoformat()}
             },
