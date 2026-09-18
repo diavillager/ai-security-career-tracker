@@ -7,9 +7,11 @@ description: Notion에서 새로운 AI, Security, AI Security 직무를 발견�
 
 AI, Security, AI × Security 영역에서 변화하는 직무를 추적하되, 직무 발견과 동향 수집을 분리합니다.
 
-## 현재 개발 범위
+## 지원 기능
 
-MVP 기본 구조, Notion 데이터베이스 설정, Role Discovery, Candidate 승인·거절 변경과 Trend Update까지 구현됐습니다.
+- `Role Discovery`: AI, Security, AI × Security 영역의 새 직무를 조사하고 검증된 새 직무만 `Candidate`로 제안합니다.
+- `Candidate 검토`: 사용자가 지정한 후보를 `Approved` 또는 `Rejected`로 변경합니다.
+- `Trend Update`: 실행 시작 시점의 `Approved` 직무만 기준으로 최신 동향을 수집하고 검증합니다.
 
 ## 언어 지침
 

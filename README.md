@@ -4,7 +4,7 @@ AI, Security, AI × Security 영역의 새로운 직무를 발견하고, 사용�
 
 ## 현재 단계
 
-프로젝트 기본 골격, Notion 데이터베이스 생성·재사용, Role Discovery의 영역별 조사 Agent 세 개와 종합 근거 검토 Agent, Candidate 승인·거절, Approved 직무의 Trend Update, URL 정규화와 분류·직무 관계 검증까지 구현했습니다.
+MVP의 Role Discovery, Candidate 승인·거절과 Trend Update를 구현했습니다. 영역별 조사 Agent 세 개와 종합 근거 검토 Agent, URL 정규화, 분류·직무 관계 검증을 포함하며 실제 Notion 저장까지 전체 흐름을 확인했습니다.
 
 ## 확정된 기본값
 
@@ -69,10 +69,28 @@ Candidate 승인·거절은 사용자가 대상과 결정을 명시한 뒤에만
 
 Trend Update는 실행 시작 시점에 `Approved`인 직무만 검색합니다. 비채용 동향은 해외 출처도 허용하지만 커뮤니티와 소셜 출처는 제외하며, Job Posting은 대한민국 근무지가 확인된 경우만 사용합니다. PRD의 전체 `Source Type`, 하나 이상의 `Domain`, 복수 `Related Roles`, 분리된 `Summary`와 `Key Insight`를 검증합니다. 추적 매개변수와 fragment를 제거한 비교 키 또는 원문에서 확인한 canonical URL이 Trends DB의 기존 `Original URL`과 같으면 다시 저장하지 않습니다. 실제 Notion 쓰기 직전에 새 항목을 보여주고 확인을 받습니다.
 
+## 설치와 호출
+
+저장소 루트를 Codex Skill `ai-security-career-tracker`로 설치합니다. Python 경계 코드를 어느 작업 위치에서도 불러올 수 있게 저장소 루트에서 editable 설치를 한 번 실행합니다.
+
+```powershell
+python -m pip install -e .
+```
+
+실제 Notion 식별자는 `config.example.toml`을 복사한 `config.toml`에 저장합니다. `config.toml`은 Git에서 제외되므로 커밋하지 않습니다. Skill을 설치하거나 설정한 뒤에는 새 Codex 작업에서 다음처럼 자연어로 호출합니다.
+
+- `$ai-security-career-tracker`를 사용해 최근 7일의 새 AI 보안 직무를 찾아줘.
+- `$ai-security-career-tracker`를 사용해 지정한 Candidate를 승인해줘.
+- `$ai-security-career-tracker`를 사용해 Approved 직무의 최근 7일 동향을 수집해줘.
+
+각 요청은 독립 실행입니다. Role Discovery에서 새로 만든 Candidate를 같은 실행의 Trend Update에 자동으로 포함하지 않으며, Notion 쓰기 직전에는 변경 대상을 보여주고 사용자 확인을 받습니다.
+
 ## 테스트
 
-프로젝트 루트에서 Python 3.12로 다음 명령을 실행합니다.
+프로젝트 루트에서 Python 3.12로 전체 자동 시험과 Skill 구조 검사를 실행합니다. Windows에서는 한국어 `SKILL.md`를 일관되게 읽도록 UTF-8 모드를 지정합니다.
 
 ```powershell
 python -m unittest discover -s tests -v
+$env:PYTHONUTF8 = "1"
+python "$env:USERPROFILE\.codex\skills\.system\skill-creator\scripts\quick_validate.py" .
 ```

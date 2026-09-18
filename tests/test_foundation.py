@@ -30,6 +30,32 @@ class ProjectFoundationTests(unittest.TestCase):
         self.assertIn("\nname: ai-security-career-tracker\n", content)
         self.assertIn("\ndescription:", content)
 
+    def test_ui_metadata_routes_every_supported_workflow(self) -> None:
+        content = (ROOT / "agents" / "openai.yaml").read_text(encoding="utf-8")
+
+        self.assertIn('display_name: "AI Security Career Tracker"', content)
+        self.assertIn("$ai-security-career-tracker", content)
+        for workflow in ("직무 탐색", "Candidate 검토", "최신 동향"):
+            with self.subTest(workflow=workflow):
+                self.assertIn(workflow, content)
+
+    def test_skill_reference_links_resolve_inside_package(self) -> None:
+        content = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+        referenced_paths = (
+            "references/product-requirements.md",
+            "references/notion-databases.md",
+            "references/role-discovery.md",
+            "references/role-discovery-agent-contract.md",
+            "references/role-evidence-reviewer-contract.md",
+            "references/candidate-review.md",
+            "references/trend-update.md",
+        )
+
+        for relative_path in referenced_paths:
+            with self.subTest(reference=relative_path):
+                self.assertIn(f"]({relative_path})", content)
+                self.assertTrue((ROOT / relative_path).is_file())
+
     def test_default_configuration_matches_confirmed_decisions(self) -> None:
         with (ROOT / "config.example.toml").open("rb") as config_file:
             config = tomllib.load(config_file)
