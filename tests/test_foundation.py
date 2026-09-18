@@ -4,6 +4,10 @@ import tomllib
 import unittest
 from pathlib import Path
 
+from ai_security_career_tracker import notion_options, notion_properties
+from ai_security_career_tracker.classification import TrendSourceType
+from ai_security_career_tracker.role_discovery import RoleStatus
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -17,6 +21,8 @@ class ProjectFoundationTests(unittest.TestCase):
             "references/product-requirements.md",
             "references/classification-relations.md",
             "src/ai_security_career_tracker/classification.py",
+            "src/ai_security_career_tracker/notion_options.py",
+            "src/ai_security_career_tracker/notion_properties.py",
         )
 
         for relative_path in required:
@@ -76,6 +82,108 @@ class ProjectFoundationTests(unittest.TestCase):
 
         self.assertIn(".env", ignored)
         self.assertIn("config.toml", ignored)
+
+    def test_notion_property_names_are_korean_and_complete(self) -> None:
+        roles = {
+            notion_properties.ROLE_NAME,
+            notion_properties.ROLE_CATEGORY,
+            notion_properties.ROLE_STATUS,
+            notion_properties.ROLE_EXPERIENCE_LEVEL,
+            notion_properties.ROLE_DESCRIPTION,
+            notion_properties.ROLE_KEY_RESPONSIBILITIES,
+            notion_properties.ROLE_FIRST_DISCOVERED,
+            notion_properties.ROLE_LAST_REVIEWED,
+            notion_properties.ROLE_EVIDENCE_SOURCES,
+            notion_properties.ROLE_NOTES,
+        }
+        trends = {
+            notion_properties.TREND_TITLE,
+            notion_properties.TREND_SUMMARY,
+            notion_properties.TREND_KEY_INSIGHT,
+            notion_properties.TREND_SOURCE_TYPE,
+            notion_properties.TREND_SOURCE_NAME,
+            notion_properties.TREND_ORIGINAL_URL,
+            notion_properties.TREND_PUBLISHED_DATE,
+            notion_properties.TREND_COLLECTED_DATE,
+            notion_properties.TREND_RELATED_ROLES,
+            notion_properties.TREND_DOMAIN,
+        }
+
+        self.assertEqual(
+            roles,
+            {
+                "직무명",
+                "직무 분야",
+                "상태",
+                "경력 수준",
+                "직무 설명",
+                "주요 업무",
+                "최초 발견일",
+                "최근 검토일",
+                "근거 출처",
+                "메모",
+            },
+        )
+        self.assertEqual(
+            trends,
+            {
+                "제목",
+                "요약",
+                "핵심 시사점",
+                "출처 유형",
+                "출처명",
+                "원문 URL",
+                "게시일",
+                "수집일",
+                "관련 직무",
+                "관련 분야",
+            },
+        )
+
+    def test_notion_options_are_localized_without_changing_internal_enums(self) -> None:
+        self.assertEqual(
+            notion_options.ROLE_STATUS_TO_NOTION,
+            {
+                RoleStatus.CANDIDATE: "후보",
+                RoleStatus.APPROVED: "승인",
+                RoleStatus.REJECTED: "거절",
+            },
+        )
+        self.assertEqual(
+            notion_options.TREND_SOURCE_TYPE_TO_NOTION,
+            {
+                TrendSourceType.NEWS: "뉴스",
+                TrendSourceType.INDUSTRY_MEDIA: "업계 매체",
+                TrendSourceType.COMPANY_BLOG: "기업 블로그",
+                TrendSourceType.ENGINEERING_BLOG: "기술 블로그",
+                TrendSourceType.PRESS_RELEASE: "보도자료",
+                TrendSourceType.JOB_POSTING: "채용 공고",
+                TrendSourceType.OFFICIAL_DOCUMENTATION: "공식 문서",
+                TrendSourceType.RESEARCH_REPORT: "연구 보고서",
+                TrendSourceType.NEWSLETTER: "뉴스레터",
+                TrendSourceType.GITHUB: "GitHub",
+                TrendSourceType.PAPER: "논문",
+                TrendSourceType.CONFERENCE: "컨퍼런스",
+                TrendSourceType.GOVERNMENT: "정부",
+                TrendSourceType.OTHER: "기타",
+            },
+        )
+        self.assertEqual(
+            notion_options.role_status_from_notion("승인"),
+            RoleStatus.APPROVED,
+        )
+        self.assertEqual(
+            notion_options.role_status_from_notion("Approved"),
+            RoleStatus.APPROVED,
+        )
+        self.assertEqual(
+            notion_options.trend_source_type_from_notion("GitHub"),
+            TrendSourceType.GITHUB,
+        )
+        self.assertEqual(
+            notion_options.trend_source_type_from_notion("Research Report"),
+            TrendSourceType.RESEARCH_REPORT,
+        )
 
 
 if __name__ == "__main__":

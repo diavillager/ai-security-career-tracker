@@ -1,6 +1,6 @@
 # Candidate 승인·거절
 
-이 절차는 Roles DB에 이미 저장된 `Candidate`를 사용자의 명시적 결정에 따라 `Approved` 또는 `Rejected`로 변경할 때만 사용합니다.
+이 절차는 Roles DB의 `상태`가 `후보`인 항목을 사용자의 명시적 결정에 따라 `승인` 또는 `거절`로 변경할 때만 사용합니다. Python 내부에서는 각각 `Candidate`, `Approved`, `Rejected` enum을 유지합니다.
 
 ## 자연어 요청 해석
 
@@ -13,23 +13,23 @@
 ## 실행 순서
 
 1. `config.toml`의 프로젝트 페이지와 Roles DB 식별자를 읽고 연결된 Notion workspace, 프로젝트 페이지와 Roles DB가 맞는지 확인합니다.
-2. Roles DB에서 검토 대상뿐 아니라 같은 이름으로 정규화되는 레코드를 확인할 수 있도록 `Role Name`, `Status`와 page ID를 조회합니다.
+2. Roles DB에서 검토 대상뿐 아니라 같은 이름으로 정규화되는 레코드를 확인할 수 있도록 `직무명`, `상태`와 page ID를 조회합니다.
 3. 사용자 요청을 Python `ReviewDecision` 목록으로 변환합니다. 임의의 기본 결정을 넣지 않습니다.
 4. `plan_candidate_reviews`로 전체 요청을 먼저 검증합니다. 존재하지 않는 직무, 모호한 중복, 상충하는 결정 또는 확정 상태 반전이 하나라도 있으면 쓰기를 시작하지 않습니다.
 5. `build_notion_role_updates`로 각 page의 정확한 변경 속성을 만듭니다.
-6. 사용자에게 변경될 Role Name, 이전 `Status`, 새 `Status`, `Last Reviewed`와 `Notes`를 보여주고 실제 쓰기 직전 확인을 받습니다.
-7. 확인된 Roles DB의 각 page에 `Status`, `Last Reviewed`와 필요한 경우 `Notes`를 적용합니다. 승인 메모가 비어 있으면 기존 `Notes`를 지우지 않습니다.
+6. 사용자에게 변경될 직무명, 이전 `상태`, 새 `상태`, `최근 검토일`과 `메모`를 보여주고 실제 쓰기 직전 확인을 받습니다.
+7. 확인된 Roles DB의 각 page에 `상태`, `최근 검토일`과 필요한 경우 `메모`를 적용합니다. 승인 메모가 비어 있으면 기존 `메모`를 지우지 않습니다.
 8. 성공한 항목, 이미 같은 상태라 변경하지 않은 항목과 실패한 항목을 구분해 보고합니다.
 
 ## Notion 속성 연결
 
 | ReviewAction 값 | Roles DB 속성 |
 | --- | --- |
-| `target_status` | `Status`의 `Approved` 또는 `Rejected` |
-| `reviewed_on` | `Last Reviewed` |
-| 비어 있지 않은 `note` | `Notes` |
+| `target_status` | 내부 `Approved` 또는 `Rejected`를 `상태`의 `승인` 또는 `거절`로 변환 |
+| `reviewed_on` | `최근 검토일` |
+| 비어 있지 않은 `note` | `메모` |
 
-`First Discovered`, `Evidence Sources`, `Experience Level`과 다른 직무 정보는 Candidate 승인·거절 과정에서 변경하지 않습니다.
+`최초 발견일`, `근거 출처`, `경력 수준`과 다른 직무 정보는 Candidate 승인·거절 과정에서 변경하지 않습니다.
 
 ## 쓰기 실패 처리
 
@@ -46,6 +46,6 @@ Notion에는 여러 page를 하나의 거래처럼 한 번에 되돌리는 기�
 
 - 적용된 `Approved`와 `Rejected` Role Name
 - 이미 요청한 상태여서 변경하지 않은 Role Name
-- 적용한 `Last Reviewed` 날짜
+- 적용한 `최근 검토일` 날짜
 - 실패가 있으면 성공한 page와 실패한 page
 - Trend Update는 별도 요청이 필요하다는 안내

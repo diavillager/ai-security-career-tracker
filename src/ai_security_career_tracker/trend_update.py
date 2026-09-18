@@ -15,6 +15,19 @@ from .classification import (
     validate_classification_fields,
     validate_domain_role_support,
 )
+from .notion_options import notion_trend_source_type_name
+from .notion_properties import (
+    TREND_COLLECTED_DATE,
+    TREND_DOMAIN,
+    TREND_KEY_INSIGHT,
+    TREND_ORIGINAL_URL,
+    TREND_PUBLISHED_DATE,
+    TREND_RELATED_ROLES,
+    TREND_SOURCE_NAME,
+    TREND_SOURCE_TYPE,
+    TREND_SUMMARY,
+    TREND_TITLE,
+)
 from .role_discovery import Category, DateRange, RoleStatus, normalize_role_name
 from .source_urls import (
     SourceUrlError,
@@ -363,7 +376,7 @@ def build_notion_trend_pages(
                 f"Every planned trend needs Related Role IDs: {observation.title}"
             )
         properties: dict[str, object] = {
-            "Title": {
+            TREND_TITLE: {
                 "title": [
                     {
                         "type": "text",
@@ -371,21 +384,27 @@ def build_notion_trend_pages(
                     }
                 ]
             },
-            "Summary": _rich_text(observation.summary),
-            "Key Insight": _rich_text(observation.key_insight),
-            "Source Type": {"select": {"name": observation.source_type.value}},
-            "Source Name": _rich_text(observation.source_name),
-            "Original URL": {"url": stored_url},
-            "Published Date": {
+            TREND_SUMMARY: _rich_text(observation.summary),
+            TREND_KEY_INSIGHT: _rich_text(observation.key_insight),
+            TREND_SOURCE_TYPE: {
+                "select": {
+                    "name": notion_trend_source_type_name(observation.source_type)
+                }
+            },
+            TREND_SOURCE_NAME: _rich_text(observation.source_name),
+            TREND_ORIGINAL_URL: {"url": stored_url},
+            TREND_PUBLISHED_DATE: {
                 "date": {"start": observation.published_on.isoformat()}
             },
-            "Collected Date": {"date": {"start": planned.collected_on.isoformat()}},
-            "Related Roles": {
+            TREND_COLLECTED_DATE: {
+                "date": {"start": planned.collected_on.isoformat()}
+            },
+            TREND_RELATED_ROLES: {
                 "relation": [
                     {"id": record_id} for record_id in planned.related_role_ids
                 ]
             },
-            "Domain": {
+            TREND_DOMAIN: {
                 "multi_select": [
                     {"name": domain.value} for domain in observation.domains
                 ]

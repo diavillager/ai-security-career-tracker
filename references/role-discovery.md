@@ -55,7 +55,7 @@ Role Discovery는 대한민국 채용시장 조사입니다. 모든 후보에는
 
 ## 기존 직무 비교
 
-새 결과를 평가하기 전에 Roles DB의 모든 Role Name과 Status를 불러옵니다. 이름은 Unicode normalization, 앞뒤 공백 제거, 연속 공백 축소, case folding만 적용해 정규화합니다. MVP에서는 의미가 비슷한 직무명을 중복으로 판정하지 않습니다.
+새 결과를 평가하기 전에 Roles DB의 모든 `직무명`과 `상태`를 불러옵니다. 이름은 Unicode normalization, 앞뒤 공백 제거, 연속 공백 축소, case folding만 적용해 정규화합니다. MVP에서는 의미가 비슷한 직무명을 중복으로 판정하지 않습니다.
 
 - 기존 Candidate: 새 레코드를 만들지 않습니다.
 - 기존 Approved: 새 레코드를 만들지 않습니다.
@@ -68,16 +68,16 @@ Role Discovery는 대한민국 채용시장 조사입니다. 모든 후보에는
 
 두 출처 중 하나 이상은 대한민국 Job Posting이어야 합니다. 추가로 사용하는 비채용 정보는 국내외 출처 모두 허용합니다.
 
-- Role Name: 관찰된 정확한 Role Name
-- Category: 추천하는 AI, Security 또는 AI × Security
-- Status: Candidate
-- Experience Level: 공고에 명시된 값을 신입, 경력, 신입·경력, 미확인 중 하나로 정규화
-- Description: 책임에 기반한 요약
-- Key Responsibilities: 줄바꿈으로 구분한 책임
-- First Discovered: 실행일
-- Last Reviewed: 실행일
-- Evidence Sources: `format_candidate_evidence_sources`가 만든 줄바꿈 목록. 모든 Source Name과 Original URL을 보존하고, 원문에서 직접 확인한 canonical URL이 있으면 함께 표시합니다. 같은 공고 복제본과 정규화 후 같은 정보 출처에는 동일한 독립 근거 번호를 붙입니다.
-- Notes: Job market: South Korea, 확인된 근무지, 간결한 발견 이유, 불확실한 점과 `format_candidate_evidence_note`가 만든 독립 근거 수·보존 URL 수·동일 공고 그룹 요약
+- `직무명`: 관찰된 정확한 Role Name
+- `직무 분야`: 추천하는 AI, Security 또는 AI × Security
+- `상태`: 후보. 내부 enum과 Agent 계약에서는 `Candidate`를 유지합니다.
+- `경력 수준`: 공고에 명시된 값을 신입, 경력, 신입·경력, 미확인 중 하나로 정규화
+- `직무 설명`: 책임에 기반한 요약
+- `주요 업무`: 줄바꿈으로 구분한 책임
+- `최초 발견일`: 실행일
+- `최근 검토일`: 실행일
+- `근거 출처`: `format_candidate_evidence_sources`가 만든 줄바꿈 목록. 모든 Source Name과 Original URL을 보존하고, 원문에서 직접 확인한 canonical URL이 있으면 함께 표시합니다. 같은 공고 복제본과 정규화 후 같은 정보 출처에는 동일한 독립 근거 번호를 붙입니다.
+- `메모`: Job market: South Korea, 확인된 근무지, 간결한 발견 이유, 불확실한 점과 `format_candidate_evidence_note`가 만든 독립 근거 수·보존 URL 수·동일 공고 그룹 요약
 
 같은 실행에서 실행 전 Approved 직무 목록을 바꾸거나 Trend Update를 호출하거나 새 Candidate로 검색 범위를 넓히지 않습니다.
 
