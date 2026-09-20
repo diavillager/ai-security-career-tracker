@@ -8,5 +8,5 @@ provider = "codex_web"
 
 [notion]
 project_page_url = ""
-roles_database_id = ""
+jobs_database_id = ""
 trends_database_id = ""

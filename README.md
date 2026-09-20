@@ -6,7 +6,7 @@ AI, Security, AI × Security 영역의 대한민국 채용 공고와 국내외 �
 
 Job Discovery 개편의 두 번째 단계를 구현했습니다. 세 검색 Agent가 실제 공고를 수집하고, 종합 검토 Agent가 원문·근무지·분류·중복 위험을 공고별로 확인하며, Python 경계가 `적합`, `검토 필요`, `제외`, `중복`을 독립 판정합니다.
 
-아직 새 Jobs DB와 Notion 쓰기는 연결하지 않았습니다. 기존 Roles DB, Candidate 관련 코드와 기존 Trend Update 구현은 데이터 이전 단계 전까지 호환용으로 남아 있지만, 새 Job Discovery 결과를 기존 Roles DB에 저장하지 않습니다.
+새 Jobs·Trends schema, 기존 Roles 행의 Jobs 속성 변환과 설정 식별자 이전을 검증하는 Python 경계까지 구현했습니다. 실제 Notion 쓰기는 아직 실행하지 않았습니다. 기존 Roles DB, Candidate 관련 코드와 기존 Trend Update 구현은 데이터 이전 완료 전까지 호환용으로 남아 있지만, 새 Job Discovery 결과를 기존 Roles DB에 저장하지 않습니다.
 
 ## 확정된 기본값
 
@@ -29,8 +29,11 @@ Job Discovery 개편의 두 번째 단계를 구현했습니다. 세 검색 Agen
 - `references/job-evidence-reviewer-contract.md`: 종합 검토 Agent 계약
 - `references/notion-job-discovery-migration-plan.md`: 운영 Notion 실측 결과와 Jobs·Trends 안전 이전 계획
 - `src/ai_security_career_tracker/job_discovery.py`: 검색 작업, 구조 검사, 검토 반영, 공고별 판정과 중복 처리
+- `src/ai_security_career_tracker/notion_job_migration.py`: Jobs schema, Trends 변경문과 기존 Roles 행 변환 계획
+- `src/ai_security_career_tracker/notion_databases.py`: Jobs·Trends 설정 검증과 Roles 설정의 원자적 이전
 - `tests/test_job_discovery.py`: 공고 판정·중복·부분 성공·검토 격리 시험
 - `tests/test_job_discovery_agent.py`: Agent 설정과 역할 경계 시험
+- `tests/test_notion_job_migration.py`: schema, 기존 행 보존과 Trends 비어 있음 경계 시험
 
 ## Job Discovery 처리 원칙
 

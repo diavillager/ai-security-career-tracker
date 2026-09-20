@@ -12,7 +12,7 @@ AI, Security, AI × Security 영역의 대한민국 채용 공고와 국내외 �
 - `Job Discovery`: 대한민국 근무 채용 공고를 찾고, 공고 본문에서 직무를 인식해 공고별 저장 계획을 만듭니다.
 - `Trend Update`: AI, Security, AI × Security 분야의 기술·산업·연구·정책·채용시장 동향을 수집합니다.
 
-현재 branch는 Job Discovery의 Agent 검색·검토·판정까지 연결한 전환 단계입니다. 새 Jobs DB와 Notion 쓰기는 아직 연결하지 않았으므로, Job Discovery 결과를 기존 Roles DB에 쓰거나 Candidate 승인·거절 흐름으로 보내지 않습니다. 기존 Trend Update도 다음 단계에서 Roles DB 의존성을 제거할 때까지 현재 동작을 유지합니다.
+현재 branch는 Job Discovery의 Agent 검색·검토·판정과 Jobs·Trends schema 이전 계획까지 연결한 전환 단계입니다. 실제 Notion 쓰기는 아직 실행하지 않았으므로, Job Discovery 결과를 기존 Roles DB에 쓰거나 Candidate 승인·거절 흐름으로 보내지 않습니다. 기존 Trend Update도 다음 단계에서 Roles DB 의존성을 제거할 때까지 현재 동작을 유지합니다.
 
 ## 언어 지침
 
@@ -46,6 +46,8 @@ Job Discovery 채용 정보는 공고 원문에서 대한민국 근무가 확인
 - 기존 Roles DB와 데이터를 즉시 삭제하지 않습니다.
 - Job Discovery 계획을 기존 Roles DB schema에 억지로 맞춰 쓰지 않습니다.
 - 새 Jobs DB와 Trends DB 변경 목록, 이전 행과 보관 대상을 사용자에게 보여준 뒤 승인된 범위만 적용합니다.
+- `jobs_schema_ddl`, `trends_schema_migration_statements`, `plan_notion_job_migration`으로 schema와 기존 행 변환을 먼저 검증합니다.
+- 설정 전환은 검증된 기존 Roles·Trends snapshot과 새 Jobs 식별자를 사용해 `migrate_database_config`로 한 번에 적용합니다.
 
 ## Trend Update
 
