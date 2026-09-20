@@ -12,7 +12,7 @@ AI, Security, AI × Security 영역의 대한민국 채용 공고와 국내외 �
 - `Job Discovery`: 대한민국 근무 채용 공고를 찾고, 공고 본문에서 직무를 인식해 공고별 저장 계획을 만듭니다.
 - `Trend Update`: AI, Security, AI × Security 분야의 기술·산업·연구·정책·채용시장 동향을 수집합니다.
 
-운영 Notion은 Jobs·Trends 구조로 이전되었습니다. 기존 Roles DB와 원본 행은 보관 페이지에 남아 있으며, Job Discovery 결과를 기존 Roles DB나 Candidate 승인·거절 흐름으로 보내지 않습니다. 새 공고의 자동 저장 경계와 Trend Update의 Jobs 독립형 흐름은 아직 구현 전이므로 실제 수집 결과를 곧바로 Notion에 쓰지 않습니다.
+운영 Notion은 Jobs·Trends 구조로 이전되었습니다. 기존 Roles DB와 원본 행은 보관 페이지에 남아 있으며, Job Discovery 결과를 기존 Roles DB나 Candidate 승인·거절 흐름으로 보내지 않습니다. 새 공고의 Jobs 저장 경계는 구현되었지만 실제 행 생성에는 사용자 승인이 필요합니다. Trend Update의 Jobs 독립형 흐름은 아직 구현 전입니다.
 
 ## 언어 지침
 
@@ -34,7 +34,10 @@ AI, Security, AI × Security 영역의 대한민국 채용 공고와 국내외 �
 5. 구조를 통과한 observation 전체를 `job_evidence_reviewer`에 한 번 전달하고 `parse_job_evidence_review`로 변환합니다. 검토 flag와 누락은 해당 공고만 `검토 필요`로 보냅니다.
 6. `consolidate_job_agent_results`로 공고별 `적합`, `검토 필요`, `제외`, `중복`을 판정합니다. 공고 한 건에 두 번째 독립 근거를 요구하지 않습니다.
 7. 출처별 질의 수, 확인 결과 수, 연 원문 수, 접근 실패, 완료·미완료 검색 경로와 공고별 판정을 보고합니다. 미완료 경로나 blocker가 있으면 전체 검색을 완료했다고 표현하지 않습니다.
-8. 현재는 검증된 저장 계획만 보고합니다. 새 공고 저장 연결이 구현되기 전에는 운영 Jobs DB에 자동으로 쓰지 않습니다.
+8. 저장 전 `config.toml`의 `jobs_database_id`와 운영 Jobs data source를 다시 조회합니다. 26개 속성 유형과 실제 선택 옵션을 `JobsDatabaseSnapshot`으로 만들고 저장 계획 전체를 사전 검증합니다.
+9. `적합`과 `검토 필요` 공고, 추가가 필요한 기술 키워드 옵션, 제외·중복 건수를 사용자에게 보여주고 승인을 받습니다. 옵션 추가처럼 schema 변경이 필요하면 행 생성과 분리해 먼저 승인받습니다.
+10. 승인 뒤 `apply_job_discovery_plan`으로 `적합`과 `검토 필요`만 Jobs DB에 생성합니다. `제외`와 `중복`은 쓰지 않습니다. 중간 실패 시 이미 생성된 URL과 실패 URL을 보고하며 자동 삭제하지 않습니다.
+11. 생성 결과를 다시 조회해 원문 URL, 공고명, 검토 상태와 생성 건수를 확인한 뒤에만 저장 완료로 보고합니다.
 
 Job Discovery 채용 정보는 공고 원문에서 대한민국 근무가 확인된 경우만 사용합니다. 기업 공식 채용 페이지와 Saramin, JobKorea, Wanted, Jumpit을 우선하지만 완전한 허용 목록으로 쓰지 않습니다. 게시일이 없더라도 현재 모집 중임을 확인하면 `published_on: null`로 검토 대상으로 남깁니다. 원문 공고명과 모든 확인 URL을 보존하며, 중복은 URL, 플랫폼 공고 ID, 회사명·원문 공고명·근무지·날짜 순으로 공고 단위에서 판단합니다.
 

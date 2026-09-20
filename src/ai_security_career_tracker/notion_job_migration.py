@@ -145,13 +145,16 @@ def trends_schema_migration_statements() -> str:
     )
 
 
-def _rich_text(value: str) -> dict[str, object]:
+def _text_objects(value: str) -> list[dict[str, object]]:
     text = value.strip()
-    return {
-        "rich_text": (
-            [{"type": "text", "text": {"content": text}}] if text else []
-        )
-    }
+    return [
+        {"type": "text", "text": {"content": text[index : index + 2000]}}
+        for index in range(0, len(text), 2000)
+    ]
+
+
+def _rich_text(value: str) -> dict[str, object]:
+    return {"rich_text": _text_objects(value)}
 
 
 def _joined(values: tuple[str, ...]) -> str:
@@ -186,9 +189,7 @@ def build_notion_job_page(
     review_note = "\n\n".join(part for part in review_note_parts if part)
     properties: dict[str, object] = {
         JOB_TITLE: {
-            "title": [
-                {"type": "text", "text": {"content": observation.original_title.strip()}}
-            ]
+            "title": _text_objects(observation.original_title)
         },
         JOB_EMPLOYER: _rich_text(observation.employer_name),
         JOB_RECOGNIZED_ROLE: _rich_text(observation.recognized_role),
@@ -258,7 +259,10 @@ def build_notion_job_page(
         JOB_CHANGE_STATUS: {"select": {"name": change_status}},
         JOB_REVIEW_NOTES: _rich_text(review_note),
     }
-    return NotionJobPage(observation.source_url, properties)
+    return NotionJobPage(
+        observation.canonical_url or observation.source_url,
+        properties,
+    )
 
 
 def _legacy_observation(item: LegacyRoleMigrationInput) -> JobObservation:
