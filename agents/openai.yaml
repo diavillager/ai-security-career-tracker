@@ -1,4 +1,4 @@
 interface:
   display_name: "AI Security Career Tracker"
-  short_description: "AI 보안 직무 탐색·검토와 승인 직무 동향 수집을 돕습니다"
-  default_prompt: "$ai-security-career-tracker Skill을 사용해 새 AI 보안 직무 탐색, Candidate 검토 또는 Approved 직무의 최신 동향 수집을 진행해 주세요."
+  short_description: "대한민국 AI 보안 채용 공고와 국내외 동향을 수집합니다"
+  default_prompt: "$ai-security-career-tracker Skill을 사용해 대한민국 AI 보안 채용 공고를 찾거나 관련 최신 동향을 수집해 주세요."

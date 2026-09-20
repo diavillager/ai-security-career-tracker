@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ai-security-career-tracker"
 version = "0.1.0"
-description = "Codex Skill for discovering AI security roles and tracking approved-role trends"
+description = "Codex Skill for tracking South Korea AI security jobs and related trends"
 requires-python = ">=3.12"
 
 [tool.setuptools]

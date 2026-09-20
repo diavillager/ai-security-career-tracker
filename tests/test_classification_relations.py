@@ -27,7 +27,7 @@ class Role:
 
 
 class ClassificationRelationTests(unittest.TestCase):
-    def test_documentation_uses_multi_select_and_approved_relations(self) -> None:
+    def test_documentation_uses_independent_trend_multi_selects(self) -> None:
         reference = (ROOT / "references" / "classification-relations.md").read_text(
             encoding="utf-8"
         )
@@ -44,7 +44,13 @@ class ClassificationRelationTests(unittest.TestCase):
         ):
             with self.subTest(requirement=requirement):
                 self.assertIn(requirement, reference)
-        self.assertIn("| 관련 분야 | Multi-select |", database_reference)
+        for requirement in (
+            "`관련 직무`는 Jobs relation이 아니라 직무 유형을 담는 Multi-select",
+            "Jobs와 Trends는 서로 독립적",
+            "AI × Security",
+        ):
+            with self.subTest(database_requirement=requirement):
+                self.assertIn(requirement, database_reference)
 
     def test_every_prd_source_type_is_supported(self) -> None:
         self.assertEqual(

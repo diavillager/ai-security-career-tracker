@@ -395,29 +395,12 @@ class CandidateReviewTests(unittest.TestCase):
 
         self.assertEqual(calls, [])
 
-    def test_skill_routes_candidate_reviews_through_safe_workflow(self) -> None:
+    def test_skill_does_not_route_new_jobs_into_legacy_candidate_workflow(self) -> None:
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
-        reference = (ROOT / "references" / "candidate-review.md").read_text(
-            encoding="utf-8"
-        )
 
-        for requirement in (
-            "references/candidate-review.md",
-            "plan_candidate_reviews",
-            "build_notion_role_updates",
-            "실제 Notion 쓰기 직전",
-        ):
-            with self.subTest(skill_requirement=requirement):
-                self.assertIn(requirement, skill)
-        for requirement in (
-            "자연어 요청 해석",
-            "상태",
-            "최근 검토일",
-            "메모",
-            "CandidateReviewApplyError",
-        ):
-            with self.subTest(reference_requirement=requirement):
-                self.assertIn(requirement, reference)
+        self.assertIn("Candidate 승인·거절 흐름으로 보내지 않습니다", skill)
+        self.assertNotIn("plan_candidate_reviews", skill)
+        self.assertNotIn("build_notion_role_updates", skill)
 
 
 if __name__ == "__main__":

@@ -464,7 +464,7 @@ class TrendUpdateTests(unittest.TestCase):
         )
         self.assertIn("보안 통제", parsed[0].classification_basis)
 
-    def test_skill_documents_safe_trend_update_workflow(self) -> None:
+    def test_skill_documents_trend_transition_boundary(self) -> None:
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
         reference = (ROOT / "references" / "trend-update.md").read_text(
             encoding="utf-8"
@@ -472,9 +472,9 @@ class TrendUpdateTests(unittest.TestCase):
 
         for requirement in (
             "references/trend-update.md",
-            "build_trend_search_tasks",
-            "plan_trend_update",
-            "실제 Notion 쓰기 직전",
+            "Jobs DB 상태와 무관한",
+            "현재 Trend Update 실행은 중단합니다",
+            "새 Trends schema에 쓰면 안 됩니다",
         ):
             with self.subTest(skill_requirement=requirement):
                 self.assertIn(requirement, skill)

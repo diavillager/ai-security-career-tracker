@@ -6,6 +6,14 @@ from pathlib import Path
 
 from ai_security_career_tracker import notion_options, notion_properties
 from ai_security_career_tracker.classification import TrendSourceType
+from ai_security_career_tracker.job_discovery import (
+    EmploymentType,
+    ExperienceLevel,
+    JobSourceType,
+    PostingStatus,
+    ReviewStatus,
+    WorkMode,
+)
 from ai_security_career_tracker.role_discovery import RoleStatus
 
 
@@ -41,7 +49,7 @@ class ProjectFoundationTests(unittest.TestCase):
 
         self.assertIn('display_name: "AI Security Career Tracker"', content)
         self.assertIn("$ai-security-career-tracker", content)
-        for workflow in ("직무 탐색", "Candidate 검토", "최신 동향"):
+        for workflow in ("채용 공고", "최신 동향"):
             with self.subTest(workflow=workflow):
                 self.assertIn(workflow, content)
 
@@ -50,10 +58,10 @@ class ProjectFoundationTests(unittest.TestCase):
         referenced_paths = (
             "references/product-requirements.md",
             "references/notion-databases.md",
-            "references/role-discovery.md",
-            "references/role-discovery-agent-contract.md",
-            "references/role-evidence-reviewer-contract.md",
-            "references/candidate-review.md",
+            "references/job-discovery-redesign.md",
+            "references/job-discovery-agent-contract.md",
+            "references/job-evidence-reviewer-contract.md",
+            "references/notion-job-discovery-migration-plan.md",
             "references/trend-update.md",
         )
 
@@ -74,7 +82,7 @@ class ProjectFoundationTests(unittest.TestCase):
         with (ROOT / "config.example.toml").open("rb") as config_file:
             notion = tomllib.load(config_file)["notion"]
 
-        self.assertEqual(notion["roles_database_id"], "")
+        self.assertEqual(notion["jobs_database_id"], "")
         self.assertEqual(notion["trends_database_id"], "")
 
     def test_private_local_config_is_ignored(self) -> None:
@@ -83,23 +91,24 @@ class ProjectFoundationTests(unittest.TestCase):
         self.assertIn(".env", ignored)
         self.assertIn("config.toml", ignored)
 
-    def test_notion_property_names_are_korean_and_complete(self) -> None:
-        roles = {
-            notion_properties.ROLE_NAME,
-            notion_properties.ROLE_CATEGORY,
-            notion_properties.ROLE_STATUS,
-            notion_properties.ROLE_EXPERIENCE_LEVEL,
-            notion_properties.ROLE_DESCRIPTION,
-            notion_properties.ROLE_KEY_RESPONSIBILITIES,
-            notion_properties.ROLE_FIRST_DISCOVERED,
-            notion_properties.ROLE_LAST_REVIEWED,
-            notion_properties.ROLE_EVIDENCE_SOURCES,
-            notion_properties.ROLE_NOTES,
+    def test_notion_property_names_cover_jobs_and_target_trends(self) -> None:
+        jobs = {
+            value
+            for name, value in vars(notion_properties).items()
+            if name.startswith("JOB_") and isinstance(value, str)
         }
-        trends = {
+        self.assertEqual(len(jobs), 26)
+        self.assertIn("공고명", jobs)
+        self.assertIn("회사명", jobs)
+        self.assertIn("인식한 직무", jobs)
+        self.assertIn("검토 상태", jobs)
+        self.assertIn("원문 URL", jobs)
+        self.assertIn("검토 메모", jobs)
+
+        target_trends = {
             notion_properties.TREND_TITLE,
             notion_properties.TREND_SUMMARY,
-            notion_properties.TREND_KEY_INSIGHT,
+            notion_properties.TREND_CAREER_INSIGHT,
             notion_properties.TREND_SOURCE_TYPE,
             notion_properties.TREND_SOURCE_NAME,
             notion_properties.TREND_ORIGINAL_URL,
@@ -107,29 +116,16 @@ class ProjectFoundationTests(unittest.TestCase):
             notion_properties.TREND_COLLECTED_DATE,
             notion_properties.TREND_RELATED_ROLES,
             notion_properties.TREND_DOMAIN,
+            notion_properties.TREND_TECHNOLOGY_KEYWORDS,
+            notion_properties.TREND_TYPE,
+            notion_properties.TREND_REGION_SCOPE,
         }
-
         self.assertEqual(
-            roles,
-            {
-                "직무명",
-                "직무 분야",
-                "상태",
-                "경력 수준",
-                "직무 설명",
-                "주요 업무",
-                "최초 발견일",
-                "최근 검토일",
-                "근거 출처",
-                "메모",
-            },
-        )
-        self.assertEqual(
-            trends,
+            target_trends,
             {
                 "제목",
                 "요약",
-                "핵심 시사점",
+                "취업 시사점",
                 "출처 유형",
                 "출처명",
                 "원문 URL",
@@ -137,10 +133,40 @@ class ProjectFoundationTests(unittest.TestCase):
                 "수집일",
                 "관련 직무",
                 "관련 분야",
+                "기술 키워드",
+                "동향 유형",
+                "지역 범위",
             },
         )
 
     def test_notion_options_are_localized_without_changing_internal_enums(self) -> None:
+        self.assertEqual(
+            notion_options.JOB_REVIEW_STATUS_TO_NOTION,
+            {
+                ReviewStatus.ELIGIBLE: "적합",
+                ReviewStatus.NEEDS_REVIEW: "검토 필요",
+            },
+        )
+        self.assertEqual(
+            notion_options.JOB_EXPERIENCE_LEVEL_TO_NOTION[ExperienceLevel.BOTH],
+            "신입·경력",
+        )
+        self.assertEqual(
+            notion_options.JOB_EMPLOYMENT_TYPE_TO_NOTION[EmploymentType.FULL_TIME],
+            "정규직",
+        )
+        self.assertEqual(
+            notion_options.JOB_WORK_MODE_TO_NOTION[WorkMode.HYBRID],
+            "하이브리드",
+        )
+        self.assertEqual(
+            notion_options.JOB_POSTING_STATUS_TO_NOTION[PostingStatus.OPEN],
+            "모집 중",
+        )
+        self.assertEqual(
+            notion_options.JOB_SOURCE_TYPE_TO_NOTION[JobSourceType.SARAMIN],
+            "Saramin",
+        )
         self.assertEqual(
             notion_options.ROLE_STATUS_TO_NOTION,
             {
