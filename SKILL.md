@@ -12,7 +12,7 @@ AI, Security, AI × Security 영역의 대한민국 채용 공고와 국내외 �
 - `Job Discovery`: 대한민국 근무 채용 공고를 찾고, 공고 본문에서 직무를 인식해 공고별 저장 계획을 만듭니다.
 - `Trend Update`: AI, Security, AI × Security 분야의 기술·산업·연구·정책·채용시장 동향을 수집합니다.
 
-현재 branch는 Job Discovery의 Agent 검색·검토·판정과 Jobs·Trends schema 이전 계획까지 연결한 전환 단계입니다. 실제 Notion 쓰기는 아직 실행하지 않았으므로, Job Discovery 결과를 기존 Roles DB에 쓰거나 Candidate 승인·거절 흐름으로 보내지 않습니다. 기존 Trend Update도 다음 단계에서 Roles DB 의존성을 제거할 때까지 현재 동작을 유지합니다.
+운영 Notion은 Jobs·Trends 구조로 이전되었습니다. 기존 Roles DB와 원본 행은 보관 페이지에 남아 있으며, Job Discovery 결과를 기존 Roles DB나 Candidate 승인·거절 흐름으로 보내지 않습니다. 새 공고의 자동 저장 경계와 Trend Update의 Jobs 독립형 흐름은 아직 구현 전이므로 실제 수집 결과를 곧바로 Notion에 쓰지 않습니다.
 
 ## 언어 지침
 
@@ -34,13 +34,13 @@ AI, Security, AI × Security 영역의 대한민국 채용 공고와 국내외 �
 5. 구조를 통과한 observation 전체를 `job_evidence_reviewer`에 한 번 전달하고 `parse_job_evidence_review`로 변환합니다. 검토 flag와 누락은 해당 공고만 `검토 필요`로 보냅니다.
 6. `consolidate_job_agent_results`로 공고별 `적합`, `검토 필요`, `제외`, `중복`을 판정합니다. 공고 한 건에 두 번째 독립 근거를 요구하지 않습니다.
 7. 출처별 질의 수, 확인 결과 수, 연 원문 수, 접근 실패, 완료·미완료 검색 경로와 공고별 판정을 보고합니다. 미완료 경로나 blocker가 있으면 전체 검색을 완료했다고 표현하지 않습니다.
-8. 이 전환 단계에서는 계획만 보고하고 Notion에 쓰지 않습니다. 새 Jobs DB 쓰기는 schema와 데이터 이전 승인을 받은 뒤 연결합니다.
+8. 현재는 검증된 저장 계획만 보고합니다. 새 공고 저장 연결이 구현되기 전에는 운영 Jobs DB에 자동으로 쓰지 않습니다.
 
 Job Discovery 채용 정보는 공고 원문에서 대한민국 근무가 확인된 경우만 사용합니다. 기업 공식 채용 페이지와 Saramin, JobKorea, Wanted, Jumpit을 우선하지만 완전한 허용 목록으로 쓰지 않습니다. 게시일이 없더라도 현재 모집 중임을 확인하면 `published_on: null`로 검토 대상으로 남깁니다. 원문 공고명과 모든 확인 URL을 보존하며, 중복은 URL, 플랫폼 공고 ID, 회사명·원문 공고명·근무지·날짜 순으로 공고 단위에서 판단합니다.
 
 ## Notion 전환 경계
 
-현재 운영 DB의 확인과 새 Jobs DB 이전 계획은 [Notion 데이터베이스 지침](references/notion-databases.md)과 [Job Discovery Notion 이전 계획](references/notion-job-discovery-migration-plan.md)을 따릅니다. 실제 변경 전에는 [Job Discovery 중심 개편 설계안](references/job-discovery-redesign.md)의 단계 3에 따라 읽기 전용 재조회와 사용자 승인을 먼저 받습니다.
+운영 DB의 확인과 Jobs·Trends 구조는 [Notion 데이터베이스 지침](references/notion-databases.md)과 [Job Discovery Notion 이전 계획](references/notion-job-discovery-migration-plan.md)을 따릅니다. 2026-09-20 이전은 검증을 마쳤으며, 이후 schema나 데이터 변경에도 읽기 전용 재조회와 사용자 승인을 먼저 받습니다.
 
 - 저장된 식별자에 접근할 수 없거나 구조가 다르면 대체 DB를 만들지 않습니다.
 - 기존 Roles DB와 데이터를 즉시 삭제하지 않습니다.
@@ -51,7 +51,7 @@ Job Discovery 채용 정보는 공고 원문에서 대한민국 근무가 확인
 
 ## Trend Update
 
-현재 구현을 실행할 때는 [Trend Update 지침](references/trend-update.md)과 [분류·관계 기준](references/classification-relations.md)을 읽습니다. 이 branch에서는 기존 Approved 직무 snapshot 기반 흐름을 그대로 유지하며 Job Discovery와 자동으로 연결하지 않습니다. 다음 단계에서 Jobs DB 상태와 무관하게 AI, Security, AI × Security 분야를 검색하도록 개편합니다.
+현재 Trend Update 실행은 중단합니다. 기존 구현은 보관된 Roles DB의 Approved 직무 snapshot과 relation에 의존하므로 새 Trends schema에 쓰면 안 됩니다. 다음 단계에서 [Trend Update 지침](references/trend-update.md)과 [분류·관계 기준](references/classification-relations.md)을 Jobs DB 상태와 무관한 AI, Security, AI × Security 분야 검색 흐름으로 개편한 뒤 다시 활성화합니다.
 
 비채용 동향은 해외 출처도 허용하지만 커뮤니티와 소셜 출처는 제외합니다. 채용 자료는 대한민국 근무가 확인된 경우만 허용합니다. 모든 저장 항목은 원문 URL과 게시일을 보존하며, 실행하지 않은 검색이나 저장을 완료했다고 보고하지 않습니다.
 

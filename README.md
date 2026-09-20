@@ -4,9 +4,9 @@ AI, Security, AI × Security 영역의 대한민국 채용 공고와 국내외 �
 
 ## 현재 단계
 
-Job Discovery 개편의 두 번째 단계를 구현했습니다. 세 검색 Agent가 실제 공고를 수집하고, 종합 검토 Agent가 원문·근무지·분류·중복 위험을 공고별로 확인하며, Python 경계가 `적합`, `검토 필요`, `제외`, `중복`을 독립 판정합니다.
+Job Discovery 개편의 세 번째 단계까지 완료했습니다. 세 검색 Agent가 실제 공고를 수집하고, 종합 검토 Agent가 원문·근무지·분류·중복 위험을 공고별로 확인하며, Python 경계가 `적합`, `검토 필요`, `제외`, `중복`을 독립 판정합니다.
 
-새 Jobs·Trends schema, 기존 Roles 행의 Jobs 속성 변환과 설정 식별자 이전을 검증하는 Python 경계까지 구현했습니다. 실제 Notion 쓰기는 아직 실행하지 않았습니다. 기존 Roles DB, Candidate 관련 코드와 기존 Trend Update 구현은 데이터 이전 완료 전까지 호환용으로 남아 있지만, 새 Job Discovery 결과를 기존 Roles DB에 저장하지 않습니다.
+운영 Notion을 Jobs·Trends 두 탭 구조로 이전하고 기존 Roles 1건을 Jobs의 `검토 필요` 행으로 보존했습니다. 기존 Roles DB와 원본 행은 보관 페이지로 옮겼으며, 로컬 설정도 새 Jobs 식별자로 전환했습니다. Candidate 관련 코드와 기존 Trend Update 구현은 호환 기록으로 남아 있지만 새 workflow에서는 실행하지 않습니다.
 
 ## 확정된 기본값
 
@@ -58,4 +58,4 @@ python "$env:USERPROFILE\.codex\skills\.system\skill-creator\scripts\quick_valid
 
 ## 다음 구현 단계
 
-새 Jobs DB schema와 Trends DB 변경 계획을 실제 Notion 상태와 대조해 제시하고, 사용자 승인 뒤 기존 데이터를 보존하며 이전합니다. 그 전에는 현재 운영 DB를 변경하지 않습니다.
+Trend Update에서 보관된 Roles DB와 Approved relation 의존성을 제거하고, Jobs 상태와 무관하게 AI, Security, AI × Security 분야의 국내외 동향을 수집해 새 Trends schema에 저장하도록 개편합니다.

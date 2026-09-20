@@ -472,9 +472,9 @@ class TrendUpdateTests(unittest.TestCase):
 
         for requirement in (
             "references/trend-update.md",
-            "Jobs DB 상태와 무관하게",
-            "기존 Approved 직무 snapshot 기반 흐름을 그대로 유지",
-            "Job Discovery와 자동으로 연결하지 않습니다",
+            "Jobs DB 상태와 무관한",
+            "현재 Trend Update 실행은 중단합니다",
+            "새 Trends schema에 쓰면 안 됩니다",
         ):
             with self.subTest(skill_requirement=requirement):
                 self.assertIn(requirement, skill)

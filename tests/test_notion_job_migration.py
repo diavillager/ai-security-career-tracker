@@ -69,6 +69,8 @@ class NotionJobSchemaTests(unittest.TestCase):
             "Saramin",
             "지원 예정",
             "변경 없음",
+            "Endpoint Security",
+            "보안 운영",
         ):
             self.assertIn(option, schema)
 

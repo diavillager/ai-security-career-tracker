@@ -109,7 +109,7 @@ def jobs_schema_ddl() -> str:
 "경력 수준" SELECT('신입':green, '경력':blue, '신입·경력':purple, '미확인':gray),
 "주요 업무" RICH_TEXT,
 "자격 요건" RICH_TEXT,
-"기술 키워드" MULTI_SELECT(),
+"기술 키워드" MULTI_SELECT('VPN':blue, 'Firewall':red, 'IAM':purple, 'Endpoint Security':orange, '보안 운영':green),
 "근무지" RICH_TEXT,
 "고용 형태" SELECT('정규직':green, '계약직':blue, '인턴':purple, '기타':gray, '미확인':default),
 "근무 방식" SELECT('출근':blue, '하이브리드':purple, '원격':green, '미확인':gray),

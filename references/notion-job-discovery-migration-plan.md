@@ -177,3 +177,12 @@
 - `config.toml`에는 새 Jobs와 기존 Trends 식별자가 함께 저장된다.
 - 새 Job Discovery 결과가 기존 Roles schema로 쓰이지 않는다.
 - 재조회 결과와 작업일지에 실제 성공·실패 범위가 기록된다.
+
+## 10. 적용 결과 — 2026-09-20
+
+- 프로젝트 페이지에 새 inline database container를 만들고 `Jobs`, `Trends` 두 탭을 구성했다.
+- 기존 Roles 1건을 Jobs의 `검토 필요` 행으로 복사하고 원문 URL, 관련 URL, 주요 업무와 기존 경고를 재조회해 보존을 확인했다.
+- Jobs의 `기술 키워드`에는 이전 행 저장에 필요한 VPN, Firewall, IAM, Endpoint Security, 보안 운영 선택지를 추가했다.
+- Trends가 0건임을 다시 확인한 뒤 `관련 직무`를 Multi-select로 전환하고 `기술 키워드`, `동향 유형`, `지역 범위`를 추가했다.
+- 기존 Roles container와 원본 행은 삭제하지 않고 보관 페이지로 이동했다.
+- 로컬 설정은 새 Jobs 식별자와 기존 Trends 식별자를 함께 사용하도록 전환했다. 실제 식별자는 Git에서 제외되는 `config.toml`에만 저장한다.
