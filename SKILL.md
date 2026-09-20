@@ -12,7 +12,7 @@ AI, Security, AI × Security 영역의 대한민국 채용 공고와 국내외 �
 - `Job Discovery`: 대한민국 근무 채용 공고를 찾고, 공고 본문에서 직무를 인식해 공고별 저장 계획을 만듭니다.
 - `Trend Update`: AI, Security, AI × Security 분야의 기술·산업·연구·정책·채용시장 동향을 수집합니다.
 
-운영 Notion은 Jobs·Trends 구조로 이전되었습니다. 기존 Roles DB와 원본 행은 보관 페이지에 남아 있으며, Job Discovery 결과를 기존 Roles DB나 Candidate 승인·거절 흐름으로 보내지 않습니다. 새 공고의 Jobs 저장 경계는 구현되었지만 실제 행 생성에는 사용자 승인이 필요합니다. Trend Update의 Jobs 독립형 흐름은 아직 구현 전입니다.
+운영 Notion은 Jobs·Trends 구조로 이전되었습니다. 기존 Roles DB와 원본 행은 보관 페이지에 남아 있으며, 새 결과를 기존 Roles DB나 Candidate 승인·거절 흐름으로 보내지 않습니다. Trend Update는 Jobs DB 상태와 무관한 분야 검색으로 실행합니다. 실제 Notion schema나 행 변경에는 사용자 승인이 필요합니다.
 
 ## 언어 지침
 
@@ -54,9 +54,18 @@ Job Discovery 채용 정보는 공고 원문에서 대한민국 근무가 확인
 
 ## Trend Update
 
-현재 Trend Update 실행은 중단합니다. 기존 구현은 보관된 Roles DB의 Approved 직무 snapshot과 relation에 의존하므로 새 Trends schema에 쓰면 안 됩니다. 다음 단계에서 [Trend Update 지침](references/trend-update.md)과 [분류·관계 기준](references/classification-relations.md)을 Jobs DB 상태와 무관한 AI, Security, AI × Security 분야 검색 흐름으로 개편한 뒤 다시 활성화합니다.
+Trend Update는 [Trend Update 지침](references/trend-update.md)과 [분류·관계 기준](references/classification-relations.md)을 따릅니다.
 
-비채용 동향은 해외 출처도 허용하지만 커뮤니티와 소셜 출처는 제외합니다. 채용 자료는 대한민국 근무가 확인된 경우만 허용합니다. 모든 저장 항목은 원문 URL과 게시일을 보존하며, 실행하지 않은 검색이나 저장을 완료했다고 보고하지 않습니다.
+1. 부모 workflow가 기간, 수집일과 기존 Trends 원문 URL snapshot을 확정합니다. 기간이 없으면 최근 7일을 사용합니다.
+2. `build_trend_search_tasks`로 AI, Security, AI × Security의 세 검색 작업을 만듭니다. Jobs DB와 보관된 Roles DB는 읽지 않습니다.
+3. Codex 웹 검색으로 기술·산업·연구·제품·정책·위협·채용시장 동향을 찾습니다. 비채용 동향은 해외 출처도 허용하지만 커뮤니티와 소셜 출처는 제외합니다.
+4. 제목, 사실 중심 `요약`, `취업 시사점`, 출처, 게시일, `관련 분야`, 영향을 받는 `관련 직무`, `기술 키워드`, `동향 유형`, `지역 범위`와 분류 근거를 구조화합니다.
+5. `parse_trend_observations`와 `plan_trend_update`로 기간·출처·URL 중복과 필수 분류값을 검증합니다. 게시일이 없거나 기간 밖인 자료는 저장하지 않습니다.
+6. 저장 전에 운영 Trends의 13개 속성 유형과 실제 선택 옵션을 재조회합니다. 필요한 `관련 직무`나 `기술 키워드` 옵션이 없으면 행 생성과 분리해 사용자 승인을 먼저 받습니다.
+7. 새 항목과 중복으로 건너뛸 URL을 사용자에게 보여주고 승인받은 뒤 `apply_trend_update_plan`으로 생성합니다.
+8. 생성 결과를 재조회해 제목, 원문 URL과 생성 건수를 확인한 뒤에만 완료로 보고합니다.
+
+채용 자료를 동향 근거로 사용할 때는 공고 원문에서 대한민국 근무가 확인된 경우만 허용합니다. 모든 저장 항목은 원문 URL과 원문 게시일을 보존하며, 실행하지 않은 검색이나 저장을 완료했다고 보고하지 않습니다.
 
 ## 승인 경계
 
