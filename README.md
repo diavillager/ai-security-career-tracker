@@ -4,9 +4,11 @@ AI, Security, AI × Security 영역의 대한민국 채용 공고와 국내외 �
 
 ## 현재 단계
 
-Job Discovery 개편의 세 번째 단계까지 완료했습니다. 세 검색 Agent가 실제 공고를 수집하고, 종합 검토 Agent가 원문·근무지·분류·중복 위험을 공고별로 확인하며, Python 경계가 `적합`, `검토 필요`, `제외`, `중복`을 독립 판정합니다.
+Job Discovery 개편의 세 번째 단계와 Jobs 저장 경계까지 완료했습니다. 세 검색 Agent가 실제 공고를 수집하고, 종합 검토 Agent가 원문·근무지·분류·중복 위험을 공고별로 확인하며, Python 경계가 `적합`, `검토 필요`, `제외`, `중복`을 독립 판정합니다.
 
 운영 Notion을 Jobs·Trends 두 탭 구조로 이전하고 기존 Roles 1건을 Jobs의 `검토 필요` 행으로 보존했습니다. 기존 Roles DB와 원본 행은 보관 페이지로 옮겼으며, 로컬 설정도 새 Jobs 식별자로 전환했습니다. Candidate 관련 코드와 기존 Trend Update 구현은 호환 기록으로 남아 있지만 새 workflow에서는 실행하지 않습니다.
+
+Job Discovery 저장은 설정 식별자와 실제 Jobs schema·옵션을 다시 대조하고 모든 행을 먼저 검증한 뒤 실행합니다. `적합`과 `검토 필요`만 생성하며, `제외`와 `중복`은 실행 보고에만 남깁니다. 실제 행 생성과 필요한 schema 옵션 추가는 사용자 승인 뒤 수행합니다.
 
 ## 확정된 기본값
 
@@ -29,10 +31,12 @@ Job Discovery 개편의 세 번째 단계까지 완료했습니다. 세 검색 A
 - `references/job-evidence-reviewer-contract.md`: 종합 검토 Agent 계약
 - `references/notion-job-discovery-migration-plan.md`: 운영 Notion 실측 결과와 Jobs·Trends 안전 이전 계획
 - `src/ai_security_career_tracker/job_discovery.py`: 검색 작업, 구조 검사, 검토 반영, 공고별 판정과 중복 처리
+- `src/ai_security_career_tracker/job_notion_write.py`: 운영 Jobs 대상 재검증, 전체 사전 검사와 승인 후 행 생성 경계
 - `src/ai_security_career_tracker/notion_job_migration.py`: Jobs schema, Trends 변경문과 기존 Roles 행 변환 계획
 - `src/ai_security_career_tracker/notion_databases.py`: Jobs·Trends 설정 검증과 Roles 설정의 원자적 이전
 - `tests/test_job_discovery.py`: 공고 판정·중복·부분 성공·검토 격리 시험
 - `tests/test_job_discovery_agent.py`: Agent 설정과 역할 경계 시험
+- `tests/test_job_notion_write.py`: Jobs 대상·옵션·부분 실패와 쓰기 제외 경계 시험
 - `tests/test_notion_job_migration.py`: schema, 기존 행 보존과 Trends 비어 있음 경계 시험
 
 ## Job Discovery 처리 원칙
