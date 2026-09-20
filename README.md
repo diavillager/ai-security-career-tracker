@@ -34,6 +34,7 @@ MVP의 Role Discovery, Candidate 승인·거절과 Trend Update를 구현했습�
 - `agents/openai.yaml`: Codex 화면에 표시할 Skill 정보
 - `config.example.toml`: 비밀정보가 없는 설정 예시
 - `references/product-requirements.md`: MVP 범위와 단계별 구현 기준
+- `references/job-discovery-redesign.md`: Role Discovery를 Job Discovery 중심으로 바꾸기 위한 개편 설계안이며 아직 구현되지 않은 다음 버전 제안
 - `references/notion-databases.md`: Roles DB와 Trends DB의 스키마 및 재사용 절차
 - `references/role-discovery.md`: 검색, 후보 판정, Notion 저장 및 결과 보고 기준
 - `references/role-discovery-agent-contract.md`: 세 조사 Agent의 공통 입력·출력 계약
