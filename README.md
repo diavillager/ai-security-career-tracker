@@ -43,12 +43,14 @@ MVP의 Role Discovery, Candidate 승인·거절과 Trend Update를 구현했습�
 - `references/trend-update.md`: Approved 직무 동향 검색, 검증, 중복 확인과 Notion 저장 절차
 - `references/classification-relations.md`: 출처 유형, 복수 관련 분야, 관련 직무, 요약과 핵심 시사점 검증 기준
 - `src/ai_security_career_tracker/notion_databases.py`: 로컬 DB 식별자 검증 및 저장 도구
+- `src/ai_security_career_tracker/job_discovery.py`: 다음 버전 Job Discovery의 공고별 판정과 중복 처리 경계. 아직 Skill이나 Notion 쓰기에는 연결하지 않음
 - `src/ai_security_career_tracker/role_discovery.py`: 세 영역 검색 계획과 신규 Candidate 판정 도구
 - `src/ai_security_career_tracker/candidate_review.py`: Candidate 승인·거절 계획과 Notion 속성 적용 도구
 - `src/ai_security_career_tracker/trend_update.py`: Approved 직무 검색 계획, 동향 검증과 Trends DB 속성 적용 도구
 - `src/ai_security_career_tracker/source_urls.py`: 원본을 보존하는 URL 비교 키와 canonical URL 검증 도구
 - `src/ai_security_career_tracker/classification.py`: 출처 유형, 복수 관련 분야와 Approved 직무 관계 검증 도구
 - `tests/test_foundation.py`: 기본 구조와 설정 검증
+- `tests/test_job_discovery.py`: 단일 공고 허용, 개별 판정, 세 검색 범주와 공고 중복 처리 검증
 - `tests/test_role_discovery.py`: 검색 기간, 중복 차단, 다중 출처 및 Candidate 상태 검증
 - `tests/test_role_discovery_agent.py`: Agent 설정과 역할 경계 검증
 - `tests/test_candidate_review.py`: 승인·거절 계획, Notion 속성 연결과 쓰기 실패 검증
