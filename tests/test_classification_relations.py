@@ -37,10 +37,10 @@ class ClassificationRelationTests(unittest.TestCase):
 
         for requirement in (
             "Multi-select",
-            "Approved",
             "제목 exact match만",
             "요약",
-            "핵심 시사점",
+            "취업 시사점",
+            "Jobs나 보관된 Roles의 상태를 분류 근거로 사용하지 않습니다",
         ):
             with self.subTest(requirement=requirement):
                 self.assertIn(requirement, reference)

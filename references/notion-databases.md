@@ -46,6 +46,15 @@ Jobs와 Trends는 서로 독립적이다. Trends의 `관련 직무`는 Jobs rela
 6. 승인 뒤 `apply_job_discovery_plan`으로 검증된 data source에 행을 만든다. 한 건이 실패하면 이후 쓰기를 중단하고 이미 생성된 URL과 실패 URL을 보고한다.
 7. 생성된 행을 다시 조회해 URL, 공고명, 검토 상태와 건수를 대조한다. 재조회하기 전에는 저장 완료로 보고하지 않는다.
 
+## Trend Update 행 저장
+
+1. 실행 직전에 `trends_database_id`와 운영 Trends data source 식별자가 같은지 확인한다.
+2. 13개 속성명·유형과 모든 Select·Multi-select 옵션을 `TrendsDatabaseSnapshot`으로 만든다.
+3. 전체 관찰값을 먼저 변환하고 기존 URL 중복을 제외한다.
+4. 필요한 `관련 직무` 또는 `기술 키워드` 선택지가 없으면 행을 만들지 않고 schema 변경 승인을 별도로 받는다.
+5. 저장 후보와 건너뛸 URL을 보여주고 승인받은 뒤 `apply_trend_update_plan`을 실행한다.
+6. 생성 결과를 다시 조회해 제목·원문 URL·건수를 대조한다.
+
 ## Notion 표시값
 
 Python 내부 enum과 Agent JSON 계약은 영어 값을 사용한다. Notion 입출력 경계에서만 한글 표시값으로 변환한다.

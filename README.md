@@ -4,9 +4,9 @@ AI, Security, AI × Security 영역의 대한민국 채용 공고와 국내외 �
 
 ## 현재 단계
 
-Job Discovery 개편의 세 번째 단계와 Jobs 저장 경계까지 완료했습니다. 세 검색 Agent가 실제 공고를 수집하고, 종합 검토 Agent가 원문·근무지·분류·중복 위험을 공고별로 확인하며, Python 경계가 `적합`, `검토 필요`, `제외`, `중복`을 독립 판정합니다.
+Job Discovery와 Jobs 저장 경계에 이어 Trend Update의 독립형 처리 경계를 구현했습니다. Job Discovery는 공고를 수집·검토하고, Trend Update는 Jobs나 보관된 Roles 상태와 무관하게 AI, Security, AI × Security 분야를 직접 검색합니다.
 
-운영 Notion을 Jobs·Trends 두 탭 구조로 이전하고 기존 Roles 1건을 Jobs의 `검토 필요` 행으로 보존했습니다. 기존 Roles DB와 원본 행은 보관 페이지로 옮겼으며, 로컬 설정도 새 Jobs 식별자로 전환했습니다. Candidate 관련 코드와 기존 Trend Update 구현은 호환 기록으로 남아 있지만 새 workflow에서는 실행하지 않습니다.
+운영 Notion을 Jobs·Trends 두 탭 구조로 이전하고 기존 Roles 1건을 Jobs의 `검토 필요` 행으로 보존했습니다. 기존 Roles DB와 원본 행은 보관 페이지로 옮겼으며, 로컬 설정도 새 Jobs 식별자로 전환했습니다. Candidate 관련 코드는 호환 기록으로 남아 있지만 새 workflow에서는 실행하지 않습니다.
 
 Job Discovery 저장은 설정 식별자와 실제 Jobs schema·옵션을 다시 대조하고 모든 행을 먼저 검증한 뒤 실행합니다. `적합`과 `검토 필요`만 생성하며, `제외`와 `중복`은 실행 보고에만 남깁니다. 실제 행 생성과 필요한 schema 옵션 추가는 사용자 승인 뒤 수행합니다.
 
@@ -34,10 +34,12 @@ Job Discovery 저장은 설정 식별자와 실제 Jobs schema·옵션을 다시
 - `src/ai_security_career_tracker/job_notion_write.py`: 운영 Jobs 대상 재검증, 전체 사전 검사와 승인 후 행 생성 경계
 - `src/ai_security_career_tracker/notion_job_migration.py`: Jobs schema, Trends 변경문과 기존 Roles 행 변환 계획
 - `src/ai_security_career_tracker/notion_databases.py`: Jobs·Trends 설정 검증과 Roles 설정의 원자적 이전
+- `src/ai_security_career_tracker/trend_update.py`: 분야별 검색 작업, 분류·중복 검증, Trends 13개 속성과 안전한 저장 경계
 - `tests/test_job_discovery.py`: 공고 판정·중복·부분 성공·검토 격리 시험
 - `tests/test_job_discovery_agent.py`: Agent 설정과 역할 경계 시험
 - `tests/test_job_notion_write.py`: Jobs 대상·옵션·부분 실패와 쓰기 제외 경계 시험
 - `tests/test_notion_job_migration.py`: schema, 기존 행 보존과 Trends 비어 있음 경계 시험
+- `tests/test_trend_update.py`: Jobs·Roles 독립성, 분류·중복, schema 옵션과 부분 실패 시험
 
 ## Job Discovery 처리 원칙
 
@@ -62,4 +64,4 @@ python "$env:USERPROFILE\.codex\skills\.system\skill-creator\scripts\quick_valid
 
 ## 다음 구현 단계
 
-Trend Update에서 보관된 Roles DB와 Approved relation 의존성을 제거하고, Jobs 상태와 무관하게 AI, Security, AI × Security 분야의 국내외 동향을 수집해 새 Trends schema에 저장하도록 개편합니다.
+운영 Trends schema와 연결을 읽기 전용으로 확인한 뒤 실제 최근 동향 검색을 실행하고, 필요한 Multi-select 옵션과 저장 후보를 사용자 승인 경계에서 검증합니다.

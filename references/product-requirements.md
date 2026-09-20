@@ -68,7 +68,9 @@ AI, Security, AI × Security 분야로 취업을 준비하는 사용자가 대�
 1. Job Observation과 공고별 판정·중복 경계
 2. Job Discovery 조사·검토 Agent와 Skill workflow
 3. Jobs·Trends schema 코드와 기존 데이터 이전
-4. 같은 기간·출처 범위의 비교 실사용 시험
+4. Job Discovery 운영 저장 경계와 실사용 시험
+5. Jobs·Roles 독립형 Trend Update와 Trends 저장 경계
+6. 같은 기간·출처 범위의 Trend Update 실사용 시험
 
 각 단계는 관련 자동 시험, Python 문법 검사와 Skill 구조 검사를 통과해야 한다. 사용자의 명시적 승인 없이 Notion을 변경하거나 branch를 main에 병합하지 않는다.
 
