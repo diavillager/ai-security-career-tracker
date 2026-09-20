@@ -2,13 +2,22 @@
 
 AI, Security, AI × Security 영역의 대한민국 채용 공고와 국내외 동향을 추적하는 Codex Skill 프로젝트입니다.
 
-## 현재 단계
+## 현재 상태
 
-Job Discovery와 Jobs 저장 경계에 이어 Trend Update의 독립형 처리 경계를 구현했습니다. Job Discovery는 공고를 수집·검토하고, Trend Update는 Jobs나 보관된 Roles 상태와 무관하게 AI, Security, AI × Security 분야를 직접 검색합니다.
+MVP의 Job Discovery와 Trend Update 구현 및 운영 Notion 실사용 시험을 완료했습니다. Job Discovery는 공고를 수집·검토하고, Trend Update는 Jobs나 보관된 Roles 상태와 무관하게 AI, Security, AI × Security 분야를 직접 검색합니다.
 
 운영 Notion을 Jobs·Trends 두 탭 구조로 이전하고 기존 Roles 1건을 Jobs의 `검토 필요` 행으로 보존했습니다. 기존 Roles DB와 원본 행은 보관 페이지로 옮겼으며, 로컬 설정도 새 Jobs 식별자로 전환했습니다. Candidate 관련 코드는 호환 기록으로 남아 있지만 새 workflow에서는 실행하지 않습니다.
 
 Job Discovery 저장은 설정 식별자와 실제 Jobs schema·옵션을 다시 대조하고 모든 행을 먼저 검증한 뒤 실행합니다. `적합`과 `검토 필요`만 생성하며, `제외`와 `중복`은 실행 보고에만 남깁니다. 실제 행 생성과 필요한 schema 옵션 추가는 사용자 승인 뒤 수행합니다.
+
+## MVP 검증 결과
+
+- 전체 자동 시험 153개, Python 문법 검사와 Skill 구조 검사를 통과했습니다.
+- 2026-08-20~2026-09-20 Job Discovery 실사용에서 대한민국 근무 공고 17건을 새로 저장했습니다. 운영 Jobs는 이전한 1건을 포함해 18건이며 화면 확인까지 완료했습니다.
+- 2026-09-14~2026-09-20 Trend Update 실사용에서 동향 6건을 저장했습니다. 운영 Trends의 재조회와 화면 확인까지 완료했습니다.
+- 두 흐름 모두 실제 schema·선택지 전체를 저장 전에 검사하고, 사용자 승인 뒤에만 Notion을 변경했습니다.
+
+현재 확인된 기능 차단 결함은 없습니다. 다만 구형 Role Discovery와 새 Job Discovery의 동일 기간·동일 출처 비교 지표는 완전하게 산출하지 못했습니다. 구형 실행과 신형 실행의 기준일이 다르고, 구형 실행의 URL별 전체 제외 자료가 남아 있지 않아 누락률과 무관 공고 포함률을 같은 표본에서 계산할 수 없습니다. 이 제한은 현재 Job Discovery의 저장 동작을 막지 않으며, 과거 결과를 추정값으로 채우지 않습니다. 정확한 비교가 필요하면 두 방식을 같은 고정 표본에 다시 적용하는 별도 평가로 수행합니다.
 
 ## 확정된 기본값
 
@@ -62,6 +71,6 @@ python "$env:USERPROFILE\.codex\skills\.system\skill-creator\scripts\quick_valid
 
 실제 Notion 식별자는 Git에서 제외되는 `config.toml`에만 저장합니다. 인증정보는 저장소에 기록하지 않습니다.
 
-## 다음 구현 단계
+## 후속 개선 범위
 
-운영 Trends schema와 연결을 읽기 전용으로 확인한 뒤 실제 최근 동향 검색을 실행하고, 필요한 Multi-select 옵션과 저장 후보를 사용자 승인 경계에서 검증합니다.
+MVP 필수 구현은 완료됐습니다. 이후 작업은 정기 실행, 검색 출처 접근성 개선, 고정 표본 기반 구형·신형 비교 평가와 GitHub 자동 검사 도입 같은 선택적 개선으로 관리합니다.
