@@ -53,6 +53,7 @@ class ProjectFoundationTests(unittest.TestCase):
             "references/job-discovery-redesign.md",
             "references/job-discovery-agent-contract.md",
             "references/job-evidence-reviewer-contract.md",
+            "references/notion-job-discovery-migration-plan.md",
             "references/trend-update.md",
         )
 

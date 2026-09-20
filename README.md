@@ -27,6 +27,7 @@ Job Discovery 개편의 두 번째 단계를 구현했습니다. 세 검색 Agen
 - `references/job-discovery-redesign.md`: 두 DB 구조와 단계별 전환 설계
 - `references/job-discovery-agent-contract.md`: 세 검색 Agent의 공통 입력·출력 계약
 - `references/job-evidence-reviewer-contract.md`: 종합 검토 Agent 계약
+- `references/notion-job-discovery-migration-plan.md`: 운영 Notion 실측 결과와 Jobs·Trends 안전 이전 계획
 - `src/ai_security_career_tracker/job_discovery.py`: 검색 작업, 구조 검사, 검토 반영, 공고별 판정과 중복 처리
 - `tests/test_job_discovery.py`: 공고 판정·중복·부분 성공·검토 격리 시험
 - `tests/test_job_discovery_agent.py`: Agent 설정과 역할 경계 시험

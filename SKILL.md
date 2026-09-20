@@ -40,7 +40,7 @@ Job Discovery 채용 정보는 공고 원문에서 대한민국 근무가 확인
 
 ## Notion 전환 경계
 
-현재 운영 DB의 확인과 새 Jobs DB 이전 계획은 [Notion 데이터베이스 지침](references/notion-databases.md)을 참고하되, 실제 변경 전에는 [Job Discovery 중심 개편 설계안](references/job-discovery-redesign.md)의 단계 3에 따라 읽기 전용 재조회와 사용자 승인을 먼저 받습니다.
+현재 운영 DB의 확인과 새 Jobs DB 이전 계획은 [Notion 데이터베이스 지침](references/notion-databases.md)과 [Job Discovery Notion 이전 계획](references/notion-job-discovery-migration-plan.md)을 따릅니다. 실제 변경 전에는 [Job Discovery 중심 개편 설계안](references/job-discovery-redesign.md)의 단계 3에 따라 읽기 전용 재조회와 사용자 승인을 먼저 받습니다.
 
 - 저장된 식별자에 접근할 수 없거나 구조가 다르면 대체 DB를 만들지 않습니다.
 - 기존 Roles DB와 데이터를 즉시 삭제하지 않습니다.
