@@ -57,15 +57,15 @@ class JobNotionApplyError(RuntimeError):
 
 EXPECTED_JOBS_PROPERTY_TYPES: Mapping[str, str] = {
     JOB_TITLE: "title",
-    JOB_EMPLOYER: "rich_text",
-    JOB_RECOGNIZED_ROLE: "rich_text",
+    JOB_EMPLOYER: "text",
+    JOB_RECOGNIZED_ROLE: "text",
     JOB_DOMAIN: "select",
     JOB_REVIEW_STATUS: "select",
     JOB_EXPERIENCE_LEVEL: "select",
-    JOB_RESPONSIBILITIES: "rich_text",
-    JOB_REQUIREMENTS: "rich_text",
+    JOB_RESPONSIBILITIES: "text",
+    JOB_REQUIREMENTS: "text",
     JOB_TECHNOLOGY_KEYWORDS: "multi_select",
-    JOB_LOCATION: "rich_text",
+    JOB_LOCATION: "text",
     JOB_EMPLOYMENT_TYPE: "select",
     JOB_WORK_MODE: "select",
     JOB_PUBLISHED_DATE: "date",
@@ -74,14 +74,14 @@ EXPECTED_JOBS_PROPERTY_TYPES: Mapping[str, str] = {
     JOB_INTEREST_STATUS: "select",
     JOB_SOURCE_TYPE: "select",
     JOB_ORIGINAL_URL: "url",
-    JOB_RELATED_URLS: "rich_text",
+    JOB_RELATED_URLS: "text",
     JOB_PUBLISHED_DATE_STATUS: "select",
-    JOB_POSTING_ID: "rich_text",
+    JOB_POSTING_ID: "text",
     JOB_SEARCH_ROUTES: "multi_select",
     JOB_COLLECTED_DATE: "date",
     JOB_LAST_CHECKED_DATE: "date",
     JOB_CHANGE_STATUS: "select",
-    JOB_REVIEW_NOTES: "rich_text",
+    JOB_REVIEW_NOTES: "text",
 }
 
 OPTION_PROPERTY_TYPES = frozenset({"select", "multi_select"})

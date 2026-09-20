@@ -199,6 +199,24 @@ class JobNotionWriteTests(unittest.TestCase):
 
         self.assertEqual(calls, [])
 
+    def test_live_notion_text_schema_is_accepted_for_rich_text_payloads(self) -> None:
+        live_property_types = {
+            name: ("text" if property_type == "rich_text" else property_type)
+            for name, property_type in EXPECTED_JOBS_PROPERTY_TYPES.items()
+        }
+        live_target = replace(target(), property_types=live_property_types)
+        calls: list[dict[str, object]] = []
+
+        result = apply_job_discovery_plan(
+            JobDiscoveryPlan((planned(),), (), (), ()),
+            CONFIG,
+            live_target,
+            lambda _db, props: calls.append(props),
+        )
+
+        self.assertEqual(result.created_urls, ("https://careers.example/jobs/1",))
+        self.assertEqual(len(calls), 1)
+
     def test_missing_keyword_option_prevents_every_write(self) -> None:
         plan = JobDiscoveryPlan(
             eligible=(planned(observation(keyword="Model Security")),),

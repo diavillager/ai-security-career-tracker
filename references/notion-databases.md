@@ -39,6 +39,7 @@ Jobs와 Trends는 서로 독립적이다. Trends의 `관련 직무`는 Jobs rela
 
 1. 실행 직전에 `config.toml`의 `jobs_database_id`와 운영 Jobs data source 식별자가 같은지 확인한다.
 2. 운영 Jobs의 26개 속성명·유형과 Select·Multi-select 옵션을 읽어 `JobsDatabaseSnapshot`을 만든다.
+   - Notion schema 조회에서 Rich text 속성 유형은 `text`로 반환된다. 행 생성 payload의 `rich_text` 키와 혼동하지 않고 schema snapshot에는 조회값인 `text`를 사용한다.
 3. `build_notion_job_pages`로 `적합`과 `검토 필요` 공고 전체를 먼저 변환한다. `제외`와 `중복`은 행으로 만들지 않는다.
 4. 공고에 필요한 기술 키워드가 운영 옵션에 없으면 쓰기를 시작하지 않는다. 필요한 옵션과 대상 공고를 사용자에게 보여주고 schema 변경 승인을 별도로 받는다.
 5. 저장 대상, 검토 필요, 제외와 중복 건수를 사용자에게 보여주고 행 생성 승인을 받는다.
