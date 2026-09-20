@@ -41,7 +41,7 @@ class ProjectFoundationTests(unittest.TestCase):
 
         self.assertIn('display_name: "AI Security Career Tracker"', content)
         self.assertIn("$ai-security-career-tracker", content)
-        for workflow in ("직무 탐색", "Candidate 검토", "최신 동향"):
+        for workflow in ("채용 공고", "최신 동향"):
             with self.subTest(workflow=workflow):
                 self.assertIn(workflow, content)
 
@@ -50,10 +50,9 @@ class ProjectFoundationTests(unittest.TestCase):
         referenced_paths = (
             "references/product-requirements.md",
             "references/notion-databases.md",
-            "references/role-discovery.md",
-            "references/role-discovery-agent-contract.md",
-            "references/role-evidence-reviewer-contract.md",
-            "references/candidate-review.md",
+            "references/job-discovery-redesign.md",
+            "references/job-discovery-agent-contract.md",
+            "references/job-evidence-reviewer-contract.md",
             "references/trend-update.md",
         )
 
