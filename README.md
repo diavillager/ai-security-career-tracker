@@ -4,9 +4,9 @@ AI, Security, AI × Security 영역의 대한민국 채용 공고와 국내외 �
 
 ## 현재 상태
 
-MVP의 Job Discovery와 Trend Update 구현 및 운영 Notion 실사용 시험을 완료했습니다. Job Discovery는 공고를 수집·검토하고, Trend Update는 Jobs나 보관된 Roles 상태와 무관하게 AI, Security, AI × Security 분야를 직접 검색합니다.
+MVP의 Job Discovery와 Trend Update 구현 및 운영 Notion 실사용 시험을 완료했습니다. Job Discovery는 공고를 수집·검토하고, Trend Update는 Jobs나 레거시 Roles workflow와 무관하게 AI, Security, AI × Security 분야를 직접 검색합니다.
 
-운영 Notion을 Jobs·Trends 두 탭 구조로 이전하고 기존 Roles 1건을 Jobs의 `검토 필요` 행으로 보존했습니다. 기존 Roles DB와 원본 행은 보관 페이지로 옮겼으며, 로컬 설정도 새 Jobs 식별자로 전환했습니다. Candidate 관련 코드는 호환 기록으로 남아 있지만 새 workflow에서는 실행하지 않습니다.
+운영 Notion은 하나의 database container에서 `Jobs`와 `Trends` 두 탭을 보여줍니다. 기존 Roles 1건은 Jobs의 `검토 필요` 행으로 보존했고, Trends 원본 data source의 소유 위치를 운영 container로 옮긴 뒤 `AI Security Career Tracker 보관` 페이지와 기존 Roles DB를 삭제했습니다. 로컬 설정도 Jobs·Trends 식별자로 전환했습니다. Candidate·Role 관련 코드와 문서는 호환성과 변경 이력 확인용으로만 남아 있으며, 새 workflow에서 실행하거나 Roles DB를 다시 만들지 않습니다.
 
 Job Discovery 저장은 설정 식별자와 실제 Jobs schema·옵션을 다시 대조하고 모든 행을 먼저 검증한 뒤 실행합니다. `적합`과 `검토 필요`만 생성하며, `제외`와 `중복`은 실행 보고에만 남깁니다. 실제 행 생성과 필요한 schema 옵션 추가는 사용자 승인 뒤 수행합니다.
 
@@ -38,7 +38,7 @@ Job Discovery 저장은 설정 식별자와 실제 Jobs schema·옵션을 다시
 - `references/job-discovery-redesign.md`: 두 DB 구조와 단계별 전환 설계
 - `references/job-discovery-agent-contract.md`: 세 검색 Agent의 공통 입력·출력 계약
 - `references/job-evidence-reviewer-contract.md`: 종합 검토 Agent 계약
-- `references/notion-job-discovery-migration-plan.md`: 운영 Notion 실측 결과와 Jobs·Trends 안전 이전 계획
+- `references/notion-job-discovery-migration-plan.md`: 완료된 운영 Notion 이전·정리 과정의 역사 기록
 - `src/ai_security_career_tracker/job_discovery.py`: 검색 작업, 구조 검사, 검토 반영, 공고별 판정과 중복 처리
 - `src/ai_security_career_tracker/job_notion_write.py`: 운영 Jobs 대상 재검증, 전체 사전 검사와 승인 후 행 생성 경계
 - `src/ai_security_career_tracker/notion_job_migration.py`: Jobs schema, Trends 변경문과 기존 Roles 행 변환 계획
@@ -48,7 +48,7 @@ Job Discovery 저장은 설정 식별자와 실제 Jobs schema·옵션을 다시
 - `tests/test_job_discovery_agent.py`: Agent 설정과 역할 경계 시험
 - `tests/test_job_notion_write.py`: Jobs 대상·옵션·부분 실패와 쓰기 제외 경계 시험
 - `tests/test_notion_job_migration.py`: schema, 기존 행 보존과 Trends 비어 있음 경계 시험
-- `tests/test_trend_update.py`: Jobs·Roles 독립성, 분류·중복, schema 옵션과 부분 실패 시험
+- `tests/test_trend_update.py`: Jobs·레거시 Roles workflow 독립성, 분류·중복, schema 옵션과 부분 실패 시험
 
 ## Job Discovery 처리 원칙
 

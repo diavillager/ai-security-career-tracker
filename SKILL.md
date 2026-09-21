@@ -12,7 +12,7 @@ AI, Security, AI × Security 영역의 대한민국 채용 공고와 국내외 �
 - `Job Discovery`: 대한민국 근무 채용 공고를 찾고, 공고 본문에서 직무를 인식해 공고별 저장 계획을 만듭니다.
 - `Trend Update`: AI, Security, AI × Security 분야의 기술·산업·연구·정책·채용시장 동향을 수집합니다.
 
-운영 Notion은 Jobs·Trends 구조로 이전되었습니다. 기존 Roles DB와 원본 행은 보관 페이지에 남아 있으며, 새 결과를 기존 Roles DB나 Candidate 승인·거절 흐름으로 보내지 않습니다. Trend Update는 Jobs DB 상태와 무관한 분야 검색으로 실행합니다. 실제 Notion schema나 행 변경에는 사용자 승인이 필요합니다.
+운영 Notion은 하나의 database container에서 `Jobs`와 `Trends` 두 탭을 보여줍니다. 기존 Roles 1건은 Jobs의 `검토 필요` 행으로 이전했고, Trends 원본 data source의 소유 위치를 운영 container로 옮긴 뒤 보관 페이지와 기존 Roles DB를 삭제했습니다. Candidate·Role 관련 코드와 문서는 호환성과 변경 이력 확인용일 뿐 새 workflow에서 실행하거나 Roles DB를 다시 만들지 않습니다. Trend Update는 Jobs DB 상태와 무관한 분야 검색으로 실행합니다. 실제 Notion schema나 행 변경에는 사용자 승인이 필요합니다.
 
 ## 언어 지침
 
@@ -41,23 +41,21 @@ AI, Security, AI × Security 영역의 대한민국 채용 공고와 국내외 �
 
 Job Discovery 채용 정보는 공고 원문에서 대한민국 근무가 확인된 경우만 사용합니다. 기업 공식 채용 페이지와 Saramin, JobKorea, Wanted, Jumpit을 우선하지만 완전한 허용 목록으로 쓰지 않습니다. 게시일이 없더라도 현재 모집 중임을 확인하면 `published_on: null`로 검토 대상으로 남깁니다. 원문 공고명과 모든 확인 URL을 보존하며, 중복은 URL, 플랫폼 공고 ID, 회사명·원문 공고명·근무지·날짜 순으로 공고 단위에서 판단합니다.
 
-## Notion 전환 경계
+## Notion 운영 경계
 
-운영 DB의 확인과 Jobs·Trends 구조는 [Notion 데이터베이스 지침](references/notion-databases.md)과 [Job Discovery Notion 이전 계획](references/notion-job-discovery-migration-plan.md)을 따릅니다. 2026-09-20 이전은 검증을 마쳤으며, 이후 schema나 데이터 변경에도 읽기 전용 재조회와 사용자 승인을 먼저 받습니다.
+운영 DB의 확인과 Jobs·Trends 구조는 [Notion 데이터베이스 지침](references/notion-databases.md)을 따릅니다. [Job Discovery Notion 이전 계획](references/notion-job-discovery-migration-plan.md)은 완료된 이전의 역사 기록이며 현재 운영 절차로 다시 실행하지 않습니다. 2026-09-21에 Trends 원본 data source를 운영 container로 옮기고 보관 페이지를 삭제하는 최종 정리까지 검증했습니다. 이후 schema나 데이터 변경에도 읽기 전용 재조회와 사용자 승인을 먼저 받습니다.
 
 - 저장된 식별자에 접근할 수 없거나 구조가 다르면 대체 DB를 만들지 않습니다.
-- 기존 Roles DB와 데이터를 즉시 삭제하지 않습니다.
-- Job Discovery 계획을 기존 Roles DB schema에 억지로 맞춰 쓰지 않습니다.
-- 새 Jobs DB와 Trends DB 변경 목록, 이전 행과 보관 대상을 사용자에게 보여준 뒤 승인된 범위만 적용합니다.
-- `jobs_schema_ddl`, `trends_schema_migration_statements`, `plan_notion_job_migration`으로 schema와 기존 행 변환을 먼저 검증합니다.
-- 설정 전환은 검증된 기존 Roles·Trends snapshot과 새 Jobs 식별자를 사용해 `migrate_database_config`로 한 번에 적용합니다.
+- 운영 화면은 하나의 container와 `Jobs`, `Trends` 두 탭을 유지하며 Roles DB나 보관 페이지를 다시 만들지 않습니다.
+- schema나 데이터 변경 전 실제 data source, 속성, 옵션과 행 수를 다시 조회하고 변경 목록을 사용자에게 보여준 뒤 승인된 범위만 적용합니다.
+- `jobs_schema_ddl`, `trends_schema_migration_statements`, `plan_notion_job_migration`, `migrate_database_config`는 이전 과정의 호환·검증 코드로 보존하되 운영 Notion에 자동 재실행하지 않습니다.
 
 ## Trend Update
 
 Trend Update는 [Trend Update 지침](references/trend-update.md)과 [분류·관계 기준](references/classification-relations.md)을 따릅니다.
 
 1. 부모 workflow가 기간, 수집일과 기존 Trends 원문 URL snapshot을 확정합니다. 기간이 없으면 최근 7일을 사용합니다.
-2. `build_trend_search_tasks`로 AI, Security, AI × Security의 세 검색 작업을 만듭니다. Jobs DB와 보관된 Roles DB는 읽지 않습니다.
+2. `build_trend_search_tasks`로 AI, Security, AI × Security의 세 검색 작업을 만듭니다. Jobs DB나 레거시 Roles workflow는 읽지 않습니다.
 3. Codex 웹 검색으로 기술·산업·연구·제품·정책·위협·채용시장 동향을 찾습니다. 비채용 동향은 해외 출처도 허용하지만 커뮤니티와 소셜 출처는 제외합니다.
 4. 제목, 사실 중심 `요약`, `취업 시사점`, 출처, 게시일, `관련 분야`, 영향을 받는 `관련 직무`, `기술 키워드`, `동향 유형`, `지역 범위`와 분류 근거를 구조화합니다.
 5. `parse_trend_observations`와 `plan_trend_update`로 기간·출처·URL 중복과 필수 분류값을 검증합니다. 게시일이 없거나 기간 밖인 자료는 저장하지 않습니다.

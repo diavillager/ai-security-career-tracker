@@ -1,5 +1,7 @@
 # Job Discovery 중심 개편 설계안
 
+> **상태 — 개편 완료:** 이 문서의 제품 구조와 workflow 개편은 구현됐다. 7절은 당시 데이터 이전 설계의 역사 기록이다. 2026-09-21에 Trends 원본 data source의 소유 위치를 운영 container로 옮기고 검증한 뒤 보관 페이지와 기존 Roles DB를 삭제했으며, 현재 운영 workflow는 Roles DB나 보관 페이지를 사용하지 않는다.
+
 ## 1. 개편 목적
 
 현재 `Role Discovery`는 새 직무를 발견하는 기능과 실제 채용 공고를 수집하는 기능을 한 흐름에서 처리한다. 이 때문에 하나의 공고를 저장하려면 직무 후보에 필요한 독립 근거, 정확한 직무명 통합, 승인 상태까지 충족해야 한다. 실제 취업에 활용할 공고가 누락되고, 직무 변화에 대응하기 위한 분류도 공고 저장을 막는 조건으로 작동한다.
@@ -157,6 +159,8 @@ Trend Update는 Jobs DB의 승인 상태를 요구하지 않고 AI·Security·AI
 Trend Update는 별도의 검색 흐름을 유지하며 Jobs DB snapshot이나 관심 상태를 입력으로 요구하지 않는다.
 
 ## 7. 기존 데이터 이전
+
+아래 내용은 개편 당시의 이전 계획이며 현재 운영 Notion에 다시 실행하지 않는다. 최종 정리 결과는 [Job Discovery Notion 이전 계획](notion-job-discovery-migration-plan.md)에 기록한다.
 
 실제 Notion 변경 전에 읽기 전용으로 현재 data source와 행을 다시 조회하고 이전 계획을 보여준다.
 

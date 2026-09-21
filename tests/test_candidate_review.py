@@ -398,7 +398,7 @@ class CandidateReviewTests(unittest.TestCase):
     def test_skill_does_not_route_new_jobs_into_legacy_candidate_workflow(self) -> None:
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
 
-        self.assertIn("Candidate 승인·거절 흐름으로 보내지 않습니다", skill)
+        self.assertIn("새 workflow에서 실행하거나 Roles DB를 다시 만들지 않습니다", skill)
         self.assertNotIn("plan_candidate_reviews", skill)
         self.assertNotIn("build_notion_role_updates", skill)
 

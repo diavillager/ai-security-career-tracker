@@ -1,6 +1,6 @@
 # Notion 데이터베이스 설정
 
-이 절차는 확인된 `AI Security Career Tracker` 프로젝트 페이지 아래에서만 사용한다. 목표 schema와 기존 1건의 변환값은 [Job Discovery Notion 이전 계획](notion-job-discovery-migration-plan.md)을 기준으로 한다.
+이 절차는 확인된 `AI Security Career Tracker` 프로젝트 페이지의 현재 운영 구조를 점검하고 변경할 때만 사용한다. [Job Discovery Notion 이전 계획](notion-job-discovery-migration-plan.md)은 완료된 이전의 역사 기록이며 운영 절차로 다시 실행하지 않는다.
 
 ## 목표 구조
 
@@ -16,24 +16,22 @@ Jobs와 Trends는 서로 독립적이다. Trends의 `관련 직무`는 Jobs rela
 1. 연결된 Notion workspace와 사용자를 확인한다.
 2. `config.toml`의 프로젝트 페이지, Jobs·Trends 식별자를 읽는다.
 3. 저장된 식별자가 있으면 해당 data source의 제목, 필수 속성, 속성 유형과 옵션을 조회한다.
-4. 식별자가 없으면 새로 만들기 전에 프로젝트 페이지와 보관 페이지에서 기존 database와 data source를 찾는다.
+4. 프로젝트 페이지에 하나의 inline database container와 `Jobs`, `Trends` 두 탭이 있는지 확인하고, 두 data source의 식별자·제목·schema·옵션·행 수를 함께 대조한다.
 5. 제목이 같거나 연결된 data source가 여러 개면 URL, parent와 schema를 함께 확인해 대상을 구분한다.
-6. 식별자가 하나만 있거나 접근할 수 없거나 schema가 다르면 대체 database를 자동 생성하지 않고 중단한다.
+6. 식별자가 없거나 접근할 수 없거나 schema가 다르면 대체 database를 자동 생성하지 않고 중단한다.
+7. 보관 페이지와 Roles DB는 현재 운영 구조에 포함되지 않는다. 찾지 못한 것을 오류로 처리하거나 자동으로 다시 만들지 않는다.
 
-`config.toml`에는 data source 식별자가 저장되지만 기존 설정 키는 `*_database_id` 이름을 사용했다. 전환할 때 `roles_database_id`를 `jobs_database_id`로 바꾸고 기존 `trends_database_id`는 검증된 기존 Trends 식별자를 유지한다. 두 값을 한 번에 검증·저장하며 부분 저장을 허용하지 않는다.
+`config.toml`에는 `jobs_database_id`와 `trends_database_id`로 현재 두 data source 식별자를 저장한다. 실제 식별자는 Git에 포함하지 않는다. `roles_database_id`를 운영 설정에 다시 추가하지 않으며, 식별자를 변경할 때는 두 대상을 모두 검증하고 부분 저장을 허용하지 않는다.
 
-## 생성과 이전
+## 완료된 이전과 재실행 금지
 
-1. 적용 직전에 운영·보관 페이지, 기존 Roles·Trends schema와 행 수를 다시 조회한다.
-2. 새 inline database container와 Jobs data source를 만든다.
-3. 기존 Trends data source를 새 container의 `Trends` 탭으로 연결한다.
-4. 기존 Roles의 실제 채용 공고 행만 Jobs schema로 복사한다. 원본 행을 수정하거나 삭제하지 않는다.
-5. 새 Jobs 행을 재조회해 URL, 본문과 옵션이 원본 변환 계획과 일치하는지 확인한다.
-6. Trends 행 수를 다시 확인한 뒤 승인된 schema 변경을 적용한다. 기존 행이 있으면 relation 제거 전에 별도 변환 계획을 작성한다.
-7. 두 view와 표시 속성을 확인한 뒤에만 기존 Roles container를 보관 페이지로 이동한다.
-8. 새 Jobs와 기존 Trends 식별자를 함께 저장하고 새 Codex 작업에서 재조회한다.
+- 2026-09-20에 Jobs data source 생성, 기존 Roles 1건 이전, Trends schema 변경과 `Jobs`·`Trends` 탭 구성을 완료했다.
+- 2026-09-21에 Trends 원본 data source의 소유 위치를 운영 container로 옮기고 두 탭과 데이터가 유지되는지 확인한 뒤 `AI Security Career Tracker 보관` 페이지와 기존 Roles DB를 삭제했다.
+- 현재 기대 구조는 운영 프로젝트 페이지의 하나의 container와 Jobs·Trends 두 data source뿐이다.
+- `notion_job_migration.py`의 이전 함수와 이전 계획 문서는 호환성·시험·변경 이력 확인용이다. 현재 운영 Notion에 자동 재실행하지 않는다.
+- 이후 구조를 바꾸려면 읽기 전용 snapshot과 변경 목록을 먼저 만들고 사용자 승인을 받는다. 누락된 것처럼 보이는 보관 페이지나 Roles DB를 자동 생성하지 않는다.
 
-중간 실패 시 새로 만든 항목을 자동 삭제하거나 기존 운영 container를 옮기지 않는다. 성공한 단계, 실패한 단계와 생성된 대상을 보고하고 사용자의 판단을 기다린다.
+변경 중 실패하면 이미 바꾼 항목을 자동 삭제하거나 다른 container로 옮기지 않는다. 성공한 단계, 실패한 단계와 영향을 받은 대상을 보고하고 사용자의 판단을 기다린다.
 
 ## Job Discovery 행 저장
 
