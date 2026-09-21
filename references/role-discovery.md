@@ -1,5 +1,7 @@
 # Role Discovery
 
+> **레거시 참고 문서:** 현재 workflow는 Job Discovery가 공고 본문에서 직무를 인식하며 별도 Role Discovery를 실행하지 않습니다. 운영 Roles DB와 보관 페이지도 존재하지 않습니다. 이 문서는 호환 코드와 변경 이력을 이해하기 위해 보존하며, 이 절차를 실행하거나 Roles DB를 다시 만들지 않습니다.
+
 사용자가 새롭게 등장하는 Role Name을 찾거나 검토해 달라고 요청할 때 Role Discovery를 사용합니다. 검토할 후보만 만들며 Trends DB에는 아무것도 저장하지 않습니다.
 
 ## 검색 기간과 범위

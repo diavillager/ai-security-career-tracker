@@ -1,5 +1,7 @@
 # Candidate 승인·거절
 
+> **레거시 참고 문서:** 현재 workflow는 Candidate 승인·거절을 사용하지 않으며 운영 Roles DB와 보관 페이지도 존재하지 않습니다. 이 문서는 호환 코드와 변경 이력을 이해하기 위해 보존합니다. 운영 Notion에 이 절차를 실행하거나 Roles DB를 다시 만들지 않습니다.
+
 이 절차는 Roles DB의 `상태`가 `후보`인 항목을 사용자의 명시적 결정에 따라 `승인` 또는 `거절`로 변경할 때만 사용합니다. Python 내부에서는 각각 `Candidate`, `Approved`, `Rejected` enum을 유지합니다.
 
 ## 자연어 요청 해석

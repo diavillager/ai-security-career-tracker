@@ -40,7 +40,7 @@ class ClassificationRelationTests(unittest.TestCase):
             "제목 exact match만",
             "요약",
             "취업 시사점",
-            "Jobs나 보관된 Roles의 상태를 분류 근거로 사용하지 않습니다",
+            "Jobs의 상태나 레거시 Roles workflow를 분류 근거로 사용하지 않습니다",
         ):
             with self.subTest(requirement=requirement):
                 self.assertIn(requirement, reference)

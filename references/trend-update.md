@@ -1,13 +1,13 @@
 # Trend Update 절차
 
-Trend Update는 Jobs DB와 보관된 Roles DB의 상태를 입력으로 사용하지 않고 AI, Security, AI × Security 분야를 직접 조사합니다.
+Trend Update는 Jobs DB의 상태나 레거시 Roles workflow를 입력으로 사용하지 않고 AI, Security, AI × Security 분야를 직접 조사합니다.
 
 ## 입력 확정
 
 1. 연결된 Notion workspace, 프로젝트 페이지와 Trends DB가 `config.toml`의 식별자와 일치하는지 확인합니다.
 2. Trends DB의 기존 `원문 URL`을 읽어 정규화 비교 키를 만듭니다.
 3. 기간이 없으면 오늘을 마지막 날로 하는 최근 7일을 사용합니다.
-4. `build_trend_search_tasks`로 AI, Security, AI × Security의 세 검색 작업을 만듭니다. Jobs나 Roles snapshot은 읽지 않습니다.
+4. `build_trend_search_tasks`로 AI, Security, AI × Security의 세 검색 작업을 만듭니다. Jobs snapshot이나 레거시 Roles 자료는 읽지 않습니다.
 
 ## 웹 검색과 출처 기준
 

@@ -1,5 +1,7 @@
 # Role Evidence Reviewer Contract
 
+> **레거시 참고 문서:** 현재 종합 검토는 `job_evidence_reviewer`가 담당합니다. 이 계약은 호환 코드와 변경 이력 확인용이며 운영 workflow에서 실행하거나 Roles DB를 다시 만드는 근거로 사용하지 않습니다.
+
 이 계약은 `role_evidence_reviewer`가 세 영역 조사 결과를 종합 검토할 때 지킬 입력, 판단 범위, 출력 경계를 정의합니다. 이 Agent는 근거의 의미 품질을 표시하지만 Candidate 결정이나 데이터베이스 변경은 수행하지 않습니다.
 
 ## 실행 시점

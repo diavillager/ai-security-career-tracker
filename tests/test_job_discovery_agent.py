@@ -67,7 +67,7 @@ class JobDiscoveryAgentConfigurationTests(unittest.TestCase):
             "parse_job_evidence_review",
             "consolidate_job_agent_results",
             "두 번째 독립 근거를 요구하지",
-            "기존 Roles DB나 Candidate 승인·거절 흐름으로 보내지 않습니다",
+            "새 workflow에서 실행하거나 Roles DB를 다시 만들지 않습니다",
         ):
             self.assertIn(text, skill)
 

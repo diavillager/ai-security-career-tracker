@@ -47,12 +47,12 @@ AI, Security, AI × Security 분야로 취업을 준비하는 사용자가 대�
 
 ## Notion 구조
 
-프로젝트 페이지의 하나의 운영 database container에서 `Jobs`와 `Trends`를 탭으로 보여준다. 세부 schema와 기존 데이터 보존 절차는 [Job Discovery Notion 이전 계획](notion-job-discovery-migration-plan.md)을 따른다.
+프로젝트 페이지의 하나의 운영 database container에서 `Jobs`와 `Trends`를 탭으로 보여준다. 현재 운영 확인 절차는 [Notion 데이터베이스 지침](notion-databases.md)을 따르며, [Job Discovery Notion 이전 계획](notion-job-discovery-migration-plan.md)은 완료된 이전의 역사 기록으로만 사용한다.
 
 - Jobs의 한 행은 실제 채용 공고 한 건이다.
 - Trends의 한 행은 원문 콘텐츠 한 건이다.
 - Trends의 `관련 직무`는 Roles relation이 아닌 Multi-select이다.
-- 기존 Roles container와 행은 이전 검증 뒤 보관 페이지에 남기고 삭제하지 않는다.
+- 기존 Roles 1건은 Jobs의 `검토 필요` 행으로 이전했다. Trends 원본 data source의 소유 위치를 운영 container로 옮기고 검증한 뒤 보관 페이지와 기존 Roles DB를 삭제했으므로 다시 만들지 않는다.
 - 실제 schema와 데이터 변경 전 사용자에게 변경 목록을 보여주고 승인을 받는다.
 
 ## 언어 지침
@@ -69,7 +69,7 @@ AI, Security, AI × Security 분야로 취업을 준비하는 사용자가 대�
 2. Job Discovery 조사·검토 Agent와 Skill workflow
 3. Jobs·Trends schema 코드와 기존 데이터 이전
 4. Job Discovery 운영 저장 경계와 실사용 시험
-5. Jobs·Roles 독립형 Trend Update와 Trends 저장 경계
+5. Jobs와 독립적인 Trend Update와 Trends 저장 경계
 6. 같은 기간·출처 범위의 Trend Update 실사용 시험
 
 각 단계는 관련 자동 시험, Python 문법 검사와 Skill 구조 검사를 통과해야 한다. 사용자의 명시적 승인 없이 Notion을 변경하거나 branch를 main에 병합하지 않는다.

@@ -1,5 +1,7 @@
 # Role Discovery Agent Contract
 
+> **레거시 참고 문서:** 현재 Agent 구성은 Job Discovery 조사 Agent와 `job_evidence_reviewer`를 사용합니다. 이 Role Discovery 계약은 호환 코드와 변경 이력 확인용이며 운영 workflow에서 실행하거나 Roles DB를 다시 만드는 근거로 사용하지 않습니다.
+
 이 계약은 `ai_role_researcher`, `security_role_researcher`, `ai_security_role_researcher`가 공통으로 지킬 입력, 근거, 출력 경계를 정의합니다. Skill과 부모 workflow가 기준을 통제하고 각 Agent는 할당된 영역의 조사 방법만 자율적으로 선택합니다.
 
 ## 부모 workflow가 제공할 입력
